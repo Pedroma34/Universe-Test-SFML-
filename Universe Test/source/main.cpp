@@ -6,17 +6,19 @@ const int64_t WindowWidth           = 2560;               //2k is 2560x1440, 4k 
 const int64_t WindowHeight          = 1440;
 const int64_t ViewWidth		        = 1000;
 const int64_t ViewHeight            = 800;
-double UserX                       = 700000;   // Variables to represent the user's position in the universe
-double UserY                       = 700000;
+double UserX                       = 0;                   // Position of user in the universe (in pixels, devide by SectorSize to get sector coords)
+double UserY                       = 0;
 double VelocityX = 0.0, VelocityY = 0.0;                  // Velocity
 double MaxVelocity = 1000;                                // Maximum velocity
-double Acceleration = 800;                                // Acceleration
+double Acceleration = 1200;                                // Acceleration
 double Friction = 0.95;                                   // Damping factor
 double OffsetX;                                           // Calculate the pixel offset within the current sector
 double OffsetY;                                           // Calculate the pixel offset within the current sector
-double StarSystemProbability        = 0.08;               // Probability of a star system appearing in a sector
-const int64_t SectorSize            = 75;	              // Sector size in pixels
+double StarSystemProbability        = 0.05;               // Probability of a star system appearing in a sector
+const int64_t SectorSize            = 50;	              // Sector size in pixels
 bool Debug                          = true;               // Debug flag to draw sector shapes
+bool IsDragging = false;
+sf::Vector2i LastMousePos;
 uint64_t SectorsDrawn               = 0;                  // Counter to track the number of sectors drawn
 sf::Vector2i SectorCoordsOnMouse    = sf::Vector2i(0,0);  // Sector coordinates of the sector under the mouse cursor
 sf::Vector2i MouseWorldPosition     = sf::Vector2i(0,0);
@@ -80,6 +82,10 @@ int main() {
     SharedData::SetRNG(&rng);
     SharedData::SetStarSystemProbability(&StarSystemProbability);
 
+    //Setting user position
+    UserX = 10000 * SectorSize;
+    UserY = 10000 * SectorSize;
+
     while (window.isOpen()) {
         sf::Event event;
         while (window.pollEvent(event)) {
@@ -115,8 +121,31 @@ int main() {
 						view.setSize(ViewWidth, ViewHeight);
                     else
                         view.zoom(1.050f);
-                }
+                }              
+                
 			}
+            if (event.type == sf::Event::MouseButtonPressed)
+                if (event.mouseButton.button == sf::Mouse::Right) {
+                    IsDragging = true;
+                    LastMousePos = sf::Mouse::getPosition(window);
+                }
+
+            if (event.type == sf::Event::MouseButtonReleased)
+                if (event.mouseButton.button == sf::Mouse::Right)
+                    IsDragging = false;
+
+            if (event.type == sf::Event::MouseMoved)
+                if (IsDragging) {
+                    sf::Vector2i currentMousePos = sf::Mouse::getPosition(window);
+                    sf::Vector2i deltaPos = currentMousePos - LastMousePos;
+
+                    // Update the user's position based on the mouse movement
+                    // Adjust the factor to control the speed of the camera movement
+                    UserX -= deltaPos.x * 0.4;
+                    UserY -= deltaPos.y * 0.4;
+
+                    LastMousePos = currentMousePos;
+                }
         }
 
         //Update//
