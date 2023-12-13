@@ -6,13 +6,21 @@ const int64_t WindowWidth           = 2560;               //2k is 2560x1440, 4k 
 const int64_t WindowHeight          = 1440;
 const int64_t ViewWidth		        = 1000;
 const int64_t ViewHeight            = 800;
-const int64_t UniverseSize          = INT_MAX;            // Define the virtual universe size (in sectors)  // 100x100 sectors
-int64_t UserX                       = UniverseSize / 2;   // Variables to represent the user's position in the universe
-int64_t UserY                       = UniverseSize / 2;
-double StarSystemProbability        = 0.95;               // Probability of a star system appearing in a sector
-const int64_t SectorSize            = 75;	              // Sector size in pixels
+double UserX                       = 0;                   // Position of user in the universe (in pixels, devide by SectorSize to get sector coords)
+double UserY                       = 0;
+double VelocityX = 0.0, VelocityY = 0.0;                  // Velocity
+double MaxVelocity = 1000;                                // Maximum velocity
+double Acceleration = 1200;                                // Acceleration
+double Friction = 0.95;                                   // Damping factor
+double OffsetX;                                           // Calculate the pixel offset within the current sector
+double OffsetY;                                           // Calculate the pixel offset within the current sector
+double StarSystemProbability        = 0.05;               // Probability of a star system appearing in a sector
+const int64_t SectorSize            = 50;	              // Sector size in pixels
 bool Debug                          = true;               // Debug flag to draw sector shapes
+bool IsDragging = false;
+sf::Vector2i LastMousePos;
 uint64_t SectorsDrawn               = 0;                  // Counter to track the number of sectors drawn
+sf::Vector2i SectorCoordsOnMouse    = sf::Vector2i(0,0);  // Sector coordinates of the sector under the mouse cursor
 sf::Vector2i MouseWorldPosition     = sf::Vector2i(0,0);
 std::vector<std::unique_ptr<sf::Shape>> DrawQueue;        // Queue of shapes to draw. Shapes are allocated when shape is pushed and vector is cleared when drawn.
         
@@ -28,17 +36,19 @@ void DrawSectorsShape(int64_t l_row, int64_t l_column, int64_t l_startColumn, in
 void DrawStarSelected(int64_t l_row, int64_t l_column, int64_t l_startColumn, int64_t l_startRow);
 
 
-// Get the sector coordinates of the sector under the mouse cursor
-sf::Vector2<int64_t> GetSectorCoordsOnMouse(sf::RenderWindow& l_window, int64_t l_row, int64_t l_column, int64_t l_startColumn, int64_t l_startRow);
-
-
 // Proccess visible universe, looping through visible sectors. Other functions, such as DrawStarSystems, are called inside this function
 //in order to access visible sectors, stars, etc.
 void ProccessVisibleUniverse();
 
 
+void ProccessInput();
+
+
 // Draw shapes in the draw queue and clear the queue
 void ProccessDrawQueue();
+
+
+void ProccessVelocityAndPosition();
 
 
 bool DoesSectorHaveStarSystem(int64_t l_row, int64_t l_column, int64_t l_startColumn, int64_t l_startRow, std::mt19937_64& l_rng);
@@ -50,8 +60,6 @@ bool IsMouseOnSector(int64_t l_row, int64_t l_column, int64_t l_startColumn, int
 int main() {
     SharedData::SetSectorSize(&SectorSize);
 
-    //logging universie size
-    spdlog::info("Universe size: {}", UniverseSize);
 
     sf::RenderWindow window(sf::VideoMode(WindowWidth, WindowHeight), "Infinite Universe");
     SharedData::SetWindow(&window);
@@ -66,12 +74,17 @@ int main() {
     //Time
     sf::Time time;
     sf::Clock clock;
+    SharedData::SetTime(&time);
 
 
     // Random number generator and distribution
     std::mt19937_64 rng;
     SharedData::SetRNG(&rng);
     SharedData::SetStarSystemProbability(&StarSystemProbability);
+
+    //Setting user position
+    UserX = 10000 * SectorSize;
+    UserY = 10000 * SectorSize;
 
     while (window.isOpen()) {
         sf::Event event;
@@ -84,17 +97,6 @@ int main() {
             if (event.type == sf::Event::KeyPressed) {
                 if (event.key.code == sf::Keyboard::Tab)
 					Debug = !Debug;
-
-                int speed = 1;
-                if(event.key.code == sf::Keyboard::Left)
-                    UserX = (UserX - speed + UniverseSize) % UniverseSize;
-                if(event.key.code == sf::Keyboard::Right)
-					UserX = (UserX + speed) % UniverseSize;
-                if(event.key.code == sf::Keyboard::Up)
-                    UserY = (UserY - speed + UniverseSize) % UniverseSize;
-                if(event.key.code == sf::Keyboard::Down)
-                    UserY = (UserY + speed) % UniverseSize;
-                
             }
 
             //Mouse
@@ -119,8 +121,31 @@ int main() {
 						view.setSize(ViewWidth, ViewHeight);
                     else
                         view.zoom(1.050f);
-                }
+                }              
+                
 			}
+            if (event.type == sf::Event::MouseButtonPressed)
+                if (event.mouseButton.button == sf::Mouse::Right) {
+                    IsDragging = true;
+                    LastMousePos = sf::Mouse::getPosition(window);
+                }
+
+            if (event.type == sf::Event::MouseButtonReleased)
+                if (event.mouseButton.button == sf::Mouse::Right)
+                    IsDragging = false;
+
+            if (event.type == sf::Event::MouseMoved)
+                if (IsDragging) {
+                    sf::Vector2i currentMousePos = sf::Mouse::getPosition(window);
+                    sf::Vector2i deltaPos = currentMousePos - LastMousePos;
+
+                    // Update the user's position based on the mouse movement
+                    // Adjust the factor to control the speed of the camera movement
+                    UserX -= deltaPos.x * 0.4;
+                    UserY -= deltaPos.y * 0.4;
+
+                    LastMousePos = currentMousePos;
+                }
         }
 
         //Update//
@@ -130,15 +155,28 @@ int main() {
 
         ImGui::SFML::Update(window, time);
 
+        ProccessInput();
+
+        ProccessVelocityAndPosition();
+
+        //Limiting the user to go below 100 user x (relative to sector size) and 100 user y (relative to sector size)
+        if (UserX < 100 * SectorSize)
+			UserX = 100 * SectorSize;
+        if (UserY < 100 * SectorSize)
+            UserY = 100 * SectorSize;
+
+        // Calculate the pixel offset within the current sector
+        OffsetX = fmod(UserX, SectorSize);
+        OffsetY = fmod(UserY, SectorSize);
+
         //test window
         if (Debug) {
             ImGui::Begin("Test");
             ImGui::SetWindowPos(ImVec2(0, 0));
             ImGui::SetWindowFontScale(2.0f);
-            ImGui::Text("Universe size: %d", UniverseSize);
             ImGui::Text("Star system probability: %f", StarSystemProbability);
-            ImGui::Text("UserX: %d", UserX);
-            ImGui::Text("UserY: %d", UserY);
+            ImGui::Text(std::string("UserX: " + std::to_string((int64_t)UserX / SectorSize)).c_str());
+            ImGui::Text(std::string("UserY: " + std::to_string((int64_t)UserY / SectorSize)).c_str());
             ImGui::Text("Sectors drawn: %d", SectorsDrawn);
             ImGui::Text(std::string("View size x: " + std::to_string(view.getSize().x)).c_str());
             ImGui::Text(std::string("View size y: " + std::to_string(view.getSize().y)).c_str());
@@ -146,7 +184,20 @@ int main() {
             ImGui::Text(std::string("View center y: " + std::to_string(view.getCenter().y)).c_str());
             ImGui::Text(std::string("Mouse world position x: " + std::to_string(MouseWorldPosition.x)).c_str());
             ImGui::Text(std::string("Mouse world position y: " + std::to_string(MouseWorldPosition.y)).c_str());
+            ImGui::Text(std::string("Sector coords on mouse x: " + std::to_string(SectorCoordsOnMouse.x)).c_str());
+            ImGui::Text(std::string("Sector coords on mouse y: " + std::to_string(SectorCoordsOnMouse.y)).c_str());
             ImGui::Text("Debug: %d", Debug);
+            //I want to be able to input the coords I want to go to, and then press a button to go there
+            static int x = 0;
+            static int y = 0;
+            ImGui::InputInt("X", &x);
+            ImGui::InputInt("Y", &y);
+            if (ImGui::Button("Go to")) {
+				//setting user x and user y to x and y relative to sector size
+                UserX = x * SectorSize;
+                UserY = y * SectorSize;
+			}
+
             ImGui::End();
         }
         //end test window
@@ -175,7 +226,7 @@ int main() {
 }
 
 
-void DrawStarSystems(int64_t l_row, int64_t l_column, int64_t l_startColumn, int64_t l_startRow) {
+void DrawStarSystems(int64_t l_row, int64_t l_column, int64_t l_startRow, int64_t l_startColumn) {
     //Variables
     sf::RenderWindow& window = *SharedData::GetWindow();
     std::mt19937_64& rng = *SharedData::GetRNG();
@@ -202,31 +253,39 @@ void DrawStarSystems(int64_t l_row, int64_t l_column, int64_t l_startColumn, int
 
     //Top left
     if (positionRoll < probabilityTopLeft) 
-		starShape.setPosition(l_row * SectorSize - l_startColumn * SectorSize + starGlobalBounds.width, l_column * SectorSize - l_startRow * SectorSize + starGlobalBounds.height);
-	//Top Right
+        starShape.setPosition((l_row - l_startRow) * SectorSize + starGlobalBounds.width - OffsetX, (l_column - l_startColumn) * SectorSize + starGlobalBounds.height - OffsetY);
+	
+    //Top Right
     else if (positionRoll < (probabilityTopLeft + probabilityTopRight)) 
-		starShape.setPosition(l_row * SectorSize - l_startColumn * SectorSize + SectorSize - starGlobalBounds.width, l_column * SectorSize - l_startRow * SectorSize + starGlobalBounds.height);
-	//Bottom Left
+        starShape.setPosition((l_row - l_startRow) * SectorSize + SectorSize - starGlobalBounds.width - OffsetX, (l_column - l_startColumn) * SectorSize + starGlobalBounds.height - OffsetY);
+	
+    //Bottom Left
     else if (positionRoll < (probabilityTopLeft + probabilityTopRight + probabilityBottomLeft)) 
-		starShape.setPosition(l_row * SectorSize - l_startColumn * SectorSize + starGlobalBounds.width, l_column * SectorSize - l_startRow * SectorSize + SectorSize - starGlobalBounds.height);
-	//Bottom Right
+        starShape.setPosition((l_row - l_startRow) * SectorSize + starGlobalBounds.width - OffsetX, (l_column - l_startColumn) * SectorSize + SectorSize - starGlobalBounds.height - OffsetY);
+	
+    //Bottom Right
     else if (positionRoll < (probabilityTopLeft + probabilityTopRight + probabilityBottomLeft + probabilityBottomRight)) 
-		starShape.setPosition(l_row * SectorSize - l_startColumn * SectorSize + SectorSize - starGlobalBounds.width, l_column * SectorSize - l_startRow * SectorSize + SectorSize - starGlobalBounds.height);
-	//Center Top
+        starShape.setPosition((l_row - l_startRow) * SectorSize + SectorSize - starGlobalBounds.width - OffsetX, (l_column - l_startColumn) * SectorSize + SectorSize - starGlobalBounds.height - OffsetY);
+	
+    //Center Top
 	else if (positionRoll < (probabilityTopLeft + probabilityTopRight + probabilityBottomLeft + probabilityBottomRight + probabilityCenterTop))
-        starShape.setPosition(l_row * SectorSize - l_startColumn * SectorSize + SectorSize / 2, l_column * SectorSize - l_startRow * SectorSize + starGlobalBounds.height);
+        starShape.setPosition((l_row - l_startRow) * SectorSize + SectorSize  / 2 - OffsetX, (l_column - l_startColumn) * SectorSize + starGlobalBounds.height - OffsetY);
+    
     //Center Left
     else if (positionRoll < (probabilityTopLeft + probabilityTopRight + probabilityBottomLeft + probabilityBottomRight + probabilityCenterTop + probabilityCenterLeft))
-	   	starShape.setPosition(l_row * SectorSize - l_startColumn * SectorSize + starGlobalBounds.width, l_column * SectorSize - l_startRow * SectorSize + SectorSize / 2);
-    	//Center Right
+        starShape.setPosition((l_row - l_startRow) * SectorSize + starGlobalBounds.width + starGlobalBounds.width - OffsetX, (l_column - l_startColumn) * SectorSize + SectorSize / 2 - OffsetY);
+    
+    //Center Right
     else if (positionRoll < (probabilityTopLeft + probabilityTopRight + probabilityBottomLeft + probabilityBottomRight + probabilityCenterTop + probabilityCenterLeft + probabilityCenterRight))
-        starShape.setPosition(l_row * SectorSize - l_startColumn * SectorSize + SectorSize - starGlobalBounds.width, l_column * SectorSize - l_startRow * SectorSize + SectorSize / 2);
+        starShape.setPosition((l_row - l_startRow) * SectorSize + SectorSize - starGlobalBounds.width - OffsetX, (l_column - l_startColumn) * SectorSize + SectorSize / 2 - OffsetY);
+    
     //Center
     else 
-		starShape.setPosition(l_row * SectorSize - l_startColumn * SectorSize + SectorSize / 2, l_column * SectorSize - l_startRow * SectorSize+ SectorSize / 2);
-	
+        starShape.setPosition((l_row - l_startRow) * SectorSize + SectorSize / 2 - OffsetX, (l_column - l_startColumn) * SectorSize + SectorSize / 2 - OffsetY);
+
     DrawQueue.push_back(std::make_unique<sf::CircleShape>(starSystem.StarShape));
 }
+
 
 void DrawSectorsShape(int64_t l_row, int64_t l_column, int64_t l_startColumn, int64_t l_startRow) {
     if (!Debug) 
@@ -239,7 +298,7 @@ void DrawSectorsShape(int64_t l_row, int64_t l_column, int64_t l_startColumn, in
 	sectorShape.setFillColor(sf::Color::Transparent);
 	sectorShape.setOutlineColor(sf::Color::White);
 	sectorShape.setOutlineThickness(1);
-	sectorShape.setPosition(l_row * SectorSize - l_startColumn * SectorSize, l_column * SectorSize - l_startRow * SectorSize);
+    sectorShape.setPosition((l_row - l_startColumn) * SectorSize - OffsetX, (l_column - l_startRow) * SectorSize - OffsetY);
     DrawQueue.push_back(std::make_unique<sf::RectangleShape>(sectorShape));
 
    //Debugging. Draw a circle around the sector if mouse is hovering over it
@@ -249,11 +308,18 @@ void DrawSectorsShape(int64_t l_row, int64_t l_column, int64_t l_startColumn, in
 		circleShape.setFillColor(sf::Color::Transparent);
 		circleShape.setOutlineColor(sf::Color::White);
 		circleShape.setOutlineThickness(1);
-		circleShape.setPosition(l_row * SectorSize - l_startColumn * SectorSize, l_column * SectorSize - l_startRow * SectorSize);
+        circleShape.setPosition((l_row - l_startColumn) * SectorSize - OffsetX, (l_column - l_startRow) * SectorSize - OffsetY);
+
+        //If sector has a star system, change circle color to pink, otherwise, keep it white. Take offsetX and offsetY into account
+        if (DoesSectorHaveStarSystem(l_row, l_column, l_startColumn, l_startRow, *SharedData::GetRNG()))
+			circleShape.setOutlineColor(sf::Color::Magenta);
+		else
+			circleShape.setOutlineColor(sf::Color::White);
 
         DrawQueue.push_back(std::make_unique<sf::CircleShape>(circleShape));
 	}
 }
+
 
 void DrawStarSelected(int64_t l_row, int64_t l_column, int64_t l_startColumn, int64_t l_startRow) {
 
@@ -279,35 +345,44 @@ void DrawStarSelected(int64_t l_row, int64_t l_column, int64_t l_startColumn, in
    // }
 }
 
-sf::Vector2<int64_t> GetSectorCoordsOnMouse(sf::RenderWindow& l_window, int64_t l_row, int64_t l_column, int64_t l_startColumn, int64_t l_startRow) {
-    int64_t row    = (MouseWorldPosition.x + l_startColumn * SectorSize) / SectorSize;
-    int64_t column = (MouseWorldPosition.y + l_startRow * SectorSize) / SectorSize;
-    return sf::Vector2<int64_t>(row, column);
-}
+
 
 void ProccessVisibleUniverse() {
     //Variables
     sf::RenderWindow& window = *SharedData::GetWindow();
     std::mt19937_64& rng = *SharedData::GetRNG();
 
-    // Calculate the range of sectors to render based on the user's position
-    int64_t startX = std::max(0LL, UserX - ViewWidth / (2 * SectorSize));
-    int64_t startY = std::max(0LL, UserY - ViewHeight / (2 * SectorSize));
-    int64_t endX = std::min(startX + ViewWidth / SectorSize, UniverseSize);
-    int64_t endY = std::min(startY + ViewHeight / SectorSize, UniverseSize);
+    // Calculate the range of sectors to render
+    int64_t startSectorX = static_cast<int64_t>(UserX / SectorSize) - ViewWidth / SectorSize / 2;
+    int64_t startSectorY = static_cast<int64_t>(UserY / SectorSize) - ViewHeight / SectorSize / 2;
+    int64_t endSectorX = startSectorX + ViewWidth / SectorSize + 2; // +2 to cover partially visible sectors
+    int64_t endSectorY = startSectorY + ViewHeight / SectorSize + 2;
 
+    int64_t sectorX;
+    int64_t sectorY;
     uint64_t count = 0;
-    for (int64_t x = startX; x < endX; ++x) {
-        for (int64_t y = startY; y < endY; ++y) {
-            DrawStarSystems (x, y, startX, startY);
-            DrawSectorsShape(x, y, startX, startY);
-            DrawStarSelected(x, y, startX, startY);
+    for (int64_t x = startSectorX; x < endSectorX; ++x) {
+        for (int64_t y = startSectorY; y < endSectorY; ++y) {
+
+            //Proccessing//
+            //Sector coords in the universe based on user position in the universe. The one that mouse is hovering over
+            if (IsMouseOnSector(x, y, startSectorX, startSectorY)) {
+				SectorCoordsOnMouse.x = x;
+				SectorCoordsOnMouse.y = y;
+			}
+
+            //Drawing//
+            DrawStarSystems(x, y, startSectorX, startSectorY);
+            DrawSectorsShape(x, y, startSectorX, startSectorY);
+            // DrawStarSelected(x, y, startSectorX, startSectorY);
+
             count++;
         }
-        count++;
+        SectorsDrawn = count;
     }
-    SectorsDrawn = count;
+
 }
+
 
 void ProccessDrawQueue() {
 	sf::RenderWindow& window = *SharedData::GetWindow();
@@ -316,15 +391,58 @@ void ProccessDrawQueue() {
 	DrawQueue.clear();
 }
 
+void ProccessVelocityAndPosition() {
+    sf::Time& time = SharedData::GetTime();
+    // Update user position based on velocity
+    UserX += VelocityX * time.asSeconds();
+    UserY += VelocityY * time.asSeconds();
+    //Checking max velocity
+    if (VelocityX > MaxVelocity)
+        VelocityX = MaxVelocity;
+    if (VelocityX < -MaxVelocity)
+        VelocityX = -MaxVelocity;
+    if (VelocityY > MaxVelocity)
+        VelocityY = MaxVelocity;
+    if (VelocityY < -MaxVelocity)
+        VelocityY = -MaxVelocity;
+}
+
+
 bool DoesSectorHaveStarSystem(int64_t l_row, int64_t l_column, int64_t l_startColumn, int64_t l_startRow, std::mt19937_64& l_rng) {
     std::uniform_real_distribution<double> dist(0.0, 1.0);
     l_rng.seed(SharedData::Get().GenerateSeed(l_row, l_column));
     return dist(l_rng) < StarSystemProbability;
 }
 
+
 bool IsMouseOnSector(int64_t l_row, int64_t l_column, int64_t l_startColumn, int64_t l_startRow) {
-    if (MouseWorldPosition.x >= l_row * SectorSize - l_startColumn * SectorSize && MouseWorldPosition.x <= l_row * SectorSize - l_startColumn * SectorSize + SectorSize &&
-        MouseWorldPosition.y >= l_column * SectorSize - l_startRow * SectorSize && MouseWorldPosition.y <= l_column * SectorSize - l_startRow * SectorSize + SectorSize)
-        return true;
+    //Checking if mouse is on sector considering OffsetX and OffsetY
+    if (MouseWorldPosition.x >= (l_row - l_startColumn) * SectorSize - OffsetX && MouseWorldPosition.x <= (l_row - l_startColumn) * SectorSize + SectorSize - OffsetX &&
+        MouseWorldPosition.y >= (l_column - l_startRow) * SectorSize - OffsetY && MouseWorldPosition.y <= (l_column - l_startRow) * SectorSize + SectorSize - OffsetY)
+		return true;
     return false;
+}
+
+
+void ProccessInput() {
+    sf::Time& time = SharedData::GetTime();
+
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::A)) {
+        VelocityX -= Acceleration * time.asSeconds();
+    }
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::D)) {
+        VelocityX += Acceleration * time.asSeconds();
+    }
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::W)) {
+        VelocityY -= Acceleration * time.asSeconds();
+    }
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::S)) {
+        VelocityY += Acceleration * time.asSeconds();
+    }
+
+    //if none of the keys are pressed, apply friction
+    if (!sf::Keyboard::isKeyPressed(sf::Keyboard::A) && !sf::Keyboard::isKeyPressed(sf::Keyboard::D) && !sf::Keyboard::isKeyPressed(sf::Keyboard::W) && !sf::Keyboard::isKeyPressed(sf::Keyboard::S)) {
+		VelocityX *= Friction;
+		VelocityY *= Friction;
+	}
 }
