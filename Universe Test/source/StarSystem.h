@@ -11,6 +11,6 @@ struct StarSystem {
     sf::Color Color;
     float Size;
     bool HasStar;
-    sf::RectangleShape DebugStarSelectorShape;
+    sf::CircleShape DebugStarSelectorShape;
 
 };

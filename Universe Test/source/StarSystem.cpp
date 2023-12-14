@@ -29,10 +29,10 @@ StarSystem::StarSystem(int64_t l_x, int64_t l_y) : Color(sf::Color::Yellow), Siz
     //Setting origin to middle
     StarShape.setOrigin(StarShape.getGlobalBounds().width / 2, StarShape.getGlobalBounds().height / 2);
 
-    //Size of the debug relative to the size of the sector
-    DebugStarSelectorShape.setSize(sf::Vector2f(SharedData::GetSectorSize(), SharedData::GetSectorSize()));
+    //Selector
+    DebugStarSelectorShape.setRadius(8);
     DebugStarSelectorShape.setOrigin(DebugStarSelectorShape.getGlobalBounds().width / 2, DebugStarSelectorShape.getGlobalBounds().height / 2);
-    DebugStarSelectorShape.setFillColor(sf::Color::Red);
+    DebugStarSelectorShape.setFillColor(sf::Color::Transparent);
     DebugStarSelectorShape.setOutlineColor(sf::Color::Red);
     DebugStarSelectorShape.setOutlineThickness(1);
 
@@ -62,6 +62,7 @@ void StarSystem::SetStarPositionInSector(int64_t l_row, int64_t l_column, int64_
     auto& rng = *SharedData::GetRNG();
     const int64_t& sectorSize = SharedData::GetSectorSize();
     const auto& starGlobalBounds = StarShape.getGlobalBounds();
+    const auto& selectorGlobalBounds = DebugStarSelectorShape.getGlobalBounds();
     const double& UserX = SharedData::GetUserX();
     const double& UserY = SharedData::GetUserY();
     double OffsetX = fmod(UserX, sectorSize);
@@ -70,14 +71,14 @@ void StarSystem::SetStarPositionInSector(int64_t l_row, int64_t l_column, int64_
     std::uniform_real_distribution<double> dist(0.0, 1.0);
 
     double positionRoll = dist(rng);
-    const double probabilityTopLeft = 0.125;
-    const double probabilityTopRight = 0.125;
-    const double probabilityBottomLeft = 0.125;
+    const double probabilityTopLeft     = 0.125;
+    const double probabilityTopRight    = 0.125;
+    const double probabilityBottomLeft  = 0.125;
     const double probabilityBottomRight = 0.125;
-    const double probabilityCenterTop = 0.125;
-    const double probabilityCenterLeft = 0.125;
+    const double probabilityCenterTop   = 0.125;
+    const double probabilityCenterLeft  = 0.125;
     const double probabilityCenterRight = 0.125;
-    const double probabilityCenter = 0.125;
+    const double probabilityCenter      = 0.125;
 
     //Top left
     if (positionRoll < probabilityTopLeft) {
@@ -118,5 +119,6 @@ void StarSystem::SetStarPositionInSector(int64_t l_row, int64_t l_column, int64_
     else {
         StarShape.setPosition((l_row - l_startRow) * sectorSize + sectorSize / 2 - OffsetX, (l_column - l_startColumn) * sectorSize + sectorSize / 2 - OffsetY);
     }
+
 }
 

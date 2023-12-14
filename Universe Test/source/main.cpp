@@ -4,8 +4,8 @@
 
 const int64_t WindowWidth           = 2560;               //2k is 2560x1440, 4k is 3840x2160, 1440p is 1920x1440
 const int64_t WindowHeight          = 1440;
-const int64_t ViewWidth		        = 1000;
-const int64_t ViewHeight            = 800;
+const int64_t ViewWidth		        = 1920;
+const int64_t ViewHeight            = 1080;
 double UserX                        = 0;                  // Position of user in the universe (in pixels, devide by SectorSize to get sector coords)
 double UserY                        = 0;
 double VelocityX                    = 0.0, 
@@ -15,7 +15,7 @@ double Acceleration                 = 2000;               // Acceleration
 double Friction                     = 0.97;               // Damping factor
 double OffsetX;                                           // Calculate the pixel offset within the current sector
 double OffsetY;                                           // Calculate the pixel offset within the current sector
-double StarSystemProbability        = 0.90;               // Probability of a star system appearing in a sector
+double StarSystemProbability        = 0.45;               // Probability of a star system appearing in a sector
 const int64_t SectorSize            = 100;	              // Sector size in pixels
 bool Debug                          = true;               // Debug flag to draw sector shapes
 bool IsDragging                     = false;
@@ -69,6 +69,8 @@ int main() {
     window.setVerticalSyncEnabled(true);
     sf::View view;
     view.reset(sf::FloatRect(0, 0, ViewWidth, ViewHeight));
+    int zoomLimit = 4; //How much it will be devided by when zooming in
+    view.setSize(ViewWidth / zoomLimit, ViewHeight / zoomLimit);
     window.setView(view);
     SharedData::SetView(&view);
 
@@ -110,8 +112,8 @@ int main() {
                     sf::Vector2f nextZoomSize = view.getSize();
                     nextZoomSize.x *= 0.95f;
                     nextZoomSize.y *= 0.95f;
-                    if (nextZoomSize.x < ViewWidth / 2 && nextZoomSize.y < ViewHeight / 2)
-                        view.setSize(ViewWidth / 2, ViewHeight / 2);
+                    if (nextZoomSize.x < ViewWidth / zoomLimit && nextZoomSize.y < ViewHeight / zoomLimit)
+                        view.setSize(ViewWidth / zoomLimit, ViewHeight / zoomLimit);
 					else
 						view.zoom(0.950f);
                 }
@@ -246,6 +248,10 @@ void DrawStarSystems(int64_t l_row, int64_t l_column, int64_t l_startRow, int64_
 
     starSystem.SetStarPositionInSector(l_row, l_column, l_startColumn, l_startRow);
 
+    //Selector
+    //const auto& selectorShape = starSystem.DebugStarSelectorShape;
+    //DrawQueue.push_back(std::make_unique<sf::CircleShape>(selectorShape));
+
     DrawQueue.push_back(std::make_unique<sf::CircleShape>(starSystem.StarShape));
 }
 
@@ -260,7 +266,7 @@ void DrawSectorsShape(int64_t l_row, int64_t l_column, int64_t l_startColumn, in
     sf::RectangleShape sectorShape(sf::Vector2f(SectorSize, SectorSize));
 	sectorShape.setFillColor(sf::Color::Transparent);
 	sectorShape.setOutlineColor(sf::Color::White);
-	sectorShape.setOutlineThickness(0.35);
+	sectorShape.setOutlineThickness(1);
     sectorShape.setPosition((l_row - l_startColumn) * SectorSize - OffsetX, (l_column - l_startRow) * SectorSize - OffsetY);
     DrawQueue.push_back(std::make_unique<sf::RectangleShape>(sectorShape));
 
@@ -286,28 +292,21 @@ void DrawSectorsShape(int64_t l_row, int64_t l_column, int64_t l_startColumn, in
 
 void DrawStarSelected(int64_t l_row, int64_t l_column, int64_t l_startColumn, int64_t l_startRow) {
 
-    if (!IsMouseOnSector(l_row, l_column, l_startColumn, l_startRow))
+    //Check if mouse is hovering on the sector, then check if the sector has a star system. If it does, draw a red circle around the exact star shape position
+    //if (!IsMouseOnSector(l_row, l_column, l_startColumn, l_startRow))
+    //    return;
+    //if (!DoesSectorHaveStarSystem(l_row, l_column, l_startColumn, l_startRow, *SharedData::GetRNG()))
+    //    return; 
+
+    //Creating Star System//
+    /*StarSystem starSystem(l_row, l_column);
+    if (!starSystem.HasStar)
         return;
-
-    //Checking if sector has star
-    if (!DoesSectorHaveStarSystem(l_row, l_column, l_startColumn, l_startRow, *SharedData::GetRNG()))
-	    return;
-    
-    //Getting star system data
-    StarSystem starSystem(l_row, l_column);
-    sf::CircleShape&     starShape        = starSystem.StarShape;
-    const sf::FloatRect& starGlobalBounds = starShape.getGlobalBounds();
+   
     starSystem.SetStarPositionInSector(l_row, l_column, l_startColumn, l_startRow);
-
-    //Drawing a square around the star system
-    /*auto& debugRect = starSystem.DebugStarSelectorShape;
-    debugRect.setPosition(starShape.getPosition());*/
-    sf::CircleShape debugRect(starGlobalBounds.width * 2);
-    debugRect.setPosition(starShape.getPosition());
-    debugRect.setFillColor(sf::Color::Transparent);
-    debugRect.setOutlineColor(sf::Color::Red);
-    debugRect.setOutlineThickness(1);
-    DrawQueue.push_back(std::make_unique<sf::CircleShape>(debugRect));
+    auto& selectorShape = starSystem.DebugStarSelectorShape;
+    selectorShape.setPosition(starSystem.StarShape.getPosition());
+    DrawQueue.push_back(std::make_unique<sf::CircleShape>(selectorShape));*/
 }
 
 
@@ -410,4 +409,5 @@ void ProccessInput() {
 		VelocityX *= Friction;
 		VelocityY *= Friction;
 	}
+
 }
