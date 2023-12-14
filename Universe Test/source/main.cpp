@@ -15,7 +15,7 @@ double Acceleration                 = 2000;               // Acceleration
 double Friction                     = 0.97;               // Damping factor
 double OffsetX;                                           // Calculate the pixel offset within the current sector
 double OffsetY;                                           // Calculate the pixel offset within the current sector
-double StarSystemProbability        = 0.45;               // Probability of a star system appearing in a sector
+double StarSystemProbability        = 0.13;               // Probability of a star system appearing in a sector
 const int64_t SectorSize            = 100;	              // Sector size in pixels
 bool Debug                          = true;               // Debug flag to draw sector shapes
 bool IsDragging                     = false;
@@ -24,6 +24,7 @@ uint64_t SectorsDrawn               = 0;                  // Counter to track th
 sf::Vector2i SectorCoordsOnMouse    = sf::Vector2i(0,0);  // Sector coordinates of the sector under the mouse cursor
 sf::Vector2i MouseWorldPosition     = sf::Vector2i(0,0);
 uint64_t StarsVisible               = 0;
+std::vector<sf::Vector2i> StarsPositions;                 //Stores the positions of the stars in the visible universe.
 std::vector<std::unique_ptr<sf::Shape>> DrawQueue;        // Queue of shapes to draw. Shapes are allocated when shape is pushed and vector is cleared when drawn.
         
 
@@ -182,6 +183,7 @@ int main() {
             ImGui::SetWindowFontScale(2.0f);
             ImGui::Text(std::string("FPS: " + std::to_string(1.0f / time.asSeconds())).c_str());
             ImGui::Text(std::string("System Probability: " + std::to_string(StarSystemProbability * 100)).c_str());
+            ImGui::Text(std::string("Stars visible: " + std::to_string(StarsVisible)).c_str());
             ImGui::Text(std::string("UserX: " + std::to_string((int64_t)UserX / SectorSize)).c_str());
             ImGui::Text(std::string("UserY: " + std::to_string((int64_t)UserY / SectorSize)).c_str());
             ImGui::Text("Sectors drawn: %d", SectorsDrawn);
@@ -189,8 +191,6 @@ int main() {
             ImGui::Text(std::string("View size y: " + std::to_string(view.getSize().y)).c_str());
             ImGui::Text(std::string("View center x: " + std::to_string(view.getCenter().x)).c_str());
             ImGui::Text(std::string("View center y: " + std::to_string(view.getCenter().y)).c_str());
-            ImGui::Text(std::string("Mouse world position x: " + std::to_string(MouseWorldPosition.x)).c_str());
-            ImGui::Text(std::string("Mouse world position y: " + std::to_string(MouseWorldPosition.y)).c_str());
             ImGui::Text(std::string("Sector coords on mouse x: " + std::to_string(SectorCoordsOnMouse.x)).c_str());
             ImGui::Text(std::string("Sector coords on mouse y: " + std::to_string(SectorCoordsOnMouse.y)).c_str());
             ImGui::Text("Debug: %d", Debug);
@@ -215,7 +215,8 @@ int main() {
 
         //Late Update
         time = clock.restart();
-        
+        uint64_t starPositionVectorSize = StarsPositions.size();
+        StarsPositions.clear();
         //End Late Update//
         
         
@@ -247,10 +248,7 @@ void DrawStarSystems(int64_t l_row, int64_t l_column, int64_t l_startRow, int64_
 
 
     starSystem.SetStarPositionInSector(l_row, l_column, l_startColumn, l_startRow);
-
-    //Selector
-    //const auto& selectorShape = starSystem.DebugStarSelectorShape;
-    //DrawQueue.push_back(std::make_unique<sf::CircleShape>(selectorShape));
+    StarsPositions.push_back(sf::Vector2i(starShape.getPosition().x, starShape.getPosition().y));
 
     DrawQueue.push_back(std::make_unique<sf::CircleShape>(starSystem.StarShape));
 }
@@ -292,21 +290,49 @@ void DrawSectorsShape(int64_t l_row, int64_t l_column, int64_t l_startColumn, in
 
 void DrawStarSelected(int64_t l_row, int64_t l_column, int64_t l_startColumn, int64_t l_startRow) {
 
-    //Check if mouse is hovering on the sector, then check if the sector has a star system. If it does, draw a red circle around the exact star shape position
-    //if (!IsMouseOnSector(l_row, l_column, l_startColumn, l_startRow))
-    //    return;
-    //if (!DoesSectorHaveStarSystem(l_row, l_column, l_startColumn, l_startRow, *SharedData::GetRNG()))
-    //    return; 
+    //Check if mouse is on sector, then if sector has a star system, then if mouse is exactly on the star system. We can get the size of stars
+    // by generating a star system and getting the size of the star. Then we can check if mouse is on the star by checking if mouse is inside the
+    // circle of the star.
+    if (!IsMouseOnSector(l_row, l_column, l_startColumn, l_startRow))
+        return;
+    if (!DoesSectorHaveStarSystem(l_row, l_column, l_startColumn, l_startRow, *SharedData::GetRNG()))
+        return;
 
     //Creating Star System//
-    /*StarSystem starSystem(l_row, l_column);
+    StarSystem starSystem(l_row, l_column);
     if (!starSystem.HasStar)
         return;
-   
-    starSystem.SetStarPositionInSector(l_row, l_column, l_startColumn, l_startRow);
-    auto& selectorShape = starSystem.DebugStarSelectorShape;
-    selectorShape.setPosition(starSystem.StarShape.getPosition());
-    DrawQueue.push_back(std::make_unique<sf::CircleShape>(selectorShape));*/
+
+    for (auto& starPosition : StarsPositions) {
+
+        //Checking if mouse is not on star, then continue
+        if (starPosition.x < (l_row - l_startColumn) * SectorSize - OffsetX || starPosition.x > (l_row - l_startColumn) * SectorSize + SectorSize - OffsetX ||
+            starPosition.y < (l_column - l_startRow) * SectorSize - OffsetY || starPosition.y > (l_column - l_startRow) * SectorSize + SectorSize - OffsetY)
+            continue;
+
+        /*sf::CircleShape starSelectorShape(starSystem.Size);
+        starSelectorShape.setOrigin(starSelectorShape.getGlobalBounds().width / 2, starSelectorShape.getGlobalBounds().height / 2);
+        starSelectorShape.setPosition(starPosition.x, starPosition.y);
+        starSelectorShape.setFillColor(sf::Color::Transparent);
+        starSelectorShape.setOutlineColor(sf::Color::Red);
+        starSelectorShape.setOutlineThickness(1);*/
+
+        sf::RectangleShape starSelectorShape(sf::Vector2f(starSystem.StarShape.getGlobalBounds().width * 1.5, starSystem.StarShape.getGlobalBounds().width * 1.5));
+        starSelectorShape.setOrigin(starSelectorShape.getGlobalBounds().width / 2, starSelectorShape.getGlobalBounds().height / 2);
+        starSelectorShape.setPosition(starPosition.x, starPosition.y);
+        starSelectorShape.setFillColor(sf::Color::Transparent);
+        starSelectorShape.setOutlineColor(sf::Color::White);
+        starSelectorShape.setOutlineThickness(1.5);
+
+        if (!starSelectorShape.getGlobalBounds().contains(MouseWorldPosition.x, MouseWorldPosition.y))
+            return;
+        
+        DrawQueue.push_back(std::make_unique<sf::RectangleShape>(starSelectorShape));
+        break;
+        
+
+    }
+
 }
 
 
@@ -324,7 +350,8 @@ void ProccessVisibleUniverse() {
 
     int64_t sectorX;
     int64_t sectorY;
-    uint64_t count = 0;
+    uint64_t count     = 0;
+    uint64_t starCount = 0;
     for (int64_t x = startSectorX; x < endSectorX; ++x) {
         for (int64_t y = startSectorY; y < endSectorY; ++y) {
 
@@ -334,6 +361,9 @@ void ProccessVisibleUniverse() {
 				SectorCoordsOnMouse.x = x;
 				SectorCoordsOnMouse.y = y;
 			}
+            //Checking if sector has a star system and adding it up to StarsVisible
+            if (DoesSectorHaveStarSystem(x, y, startSectorX, startSectorY, rng))
+                starCount++;
 
             //Drawing//
             DrawStarSystems(x, y, startSectorX, startSectorY);
@@ -343,6 +373,7 @@ void ProccessVisibleUniverse() {
             count++;
         }
         SectorsDrawn = count;
+        StarsVisible = starCount;
     }
 
 }

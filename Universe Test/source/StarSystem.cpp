@@ -29,13 +29,6 @@ StarSystem::StarSystem(int64_t l_x, int64_t l_y) : Color(sf::Color::Yellow), Siz
     //Setting origin to middle
     StarShape.setOrigin(StarShape.getGlobalBounds().width / 2, StarShape.getGlobalBounds().height / 2);
 
-    //Selector
-    DebugStarSelectorShape.setRadius(8);
-    DebugStarSelectorShape.setOrigin(DebugStarSelectorShape.getGlobalBounds().width / 2, DebugStarSelectorShape.getGlobalBounds().height / 2);
-    DebugStarSelectorShape.setFillColor(sf::Color::Transparent);
-    DebugStarSelectorShape.setOutlineColor(sf::Color::Red);
-    DebugStarSelectorShape.setOutlineThickness(1);
-
     // Determine the color of the star
     double colorRoll = dist(rng);
     const double probabilityYellow = 0.10;
@@ -81,44 +74,44 @@ void StarSystem::SetStarPositionInSector(int64_t l_row, int64_t l_column, int64_
     const double probabilityCenter      = 0.125;
 
     //Top left
-    if (positionRoll < probabilityTopLeft) {
+    if (positionRoll < probabilityTopLeft) 
         StarShape.setPosition((l_row - l_startRow) * sectorSize + starGlobalBounds.width - OffsetX, (l_column - l_startColumn) * sectorSize + starGlobalBounds.height - OffsetY);
-    }
+    
 
     //Top Right
-    else if (positionRoll < (probabilityTopLeft + probabilityTopRight)) {
+    else if (positionRoll < (probabilityTopLeft + probabilityTopRight)) 
         StarShape.setPosition((l_row - l_startRow) * sectorSize + sectorSize - starGlobalBounds.width - OffsetX, (l_column - l_startColumn) * sectorSize + starGlobalBounds.height - OffsetY);
-    }
+    
 
     //Bottom Left
-    else if (positionRoll < (probabilityTopLeft + probabilityTopRight + probabilityBottomLeft)) {
+    else if (positionRoll < (probabilityTopLeft + probabilityTopRight + probabilityBottomLeft)) 
         StarShape.setPosition((l_row - l_startRow) * sectorSize + starGlobalBounds.width - OffsetX, (l_column - l_startColumn) * sectorSize + sectorSize - starGlobalBounds.height - OffsetY);
-    }
+    
 
     //Bottom Right
-    else if (positionRoll < (probabilityTopLeft + probabilityTopRight + probabilityBottomLeft + probabilityBottomRight)) {
+    else if (positionRoll < (probabilityTopLeft + probabilityTopRight + probabilityBottomLeft + probabilityBottomRight)) 
         StarShape.setPosition((l_row - l_startRow) * sectorSize + sectorSize - starGlobalBounds.width - OffsetX, (l_column - l_startColumn) * sectorSize + sectorSize - starGlobalBounds.height - OffsetY);
-    }
+    
 
     //Center Top
-    else if (positionRoll < (probabilityTopLeft + probabilityTopRight + probabilityBottomLeft + probabilityBottomRight + probabilityCenterTop)) {
+    else if (positionRoll < (probabilityTopLeft + probabilityTopRight + probabilityBottomLeft + probabilityBottomRight + probabilityCenterTop)) 
         StarShape.setPosition((l_row - l_startRow) * sectorSize + sectorSize / 2 - OffsetX, (l_column - l_startColumn) * sectorSize + starGlobalBounds.height - OffsetY);
-    }
+    
 
     //Center Left
-    else if (positionRoll < (probabilityTopLeft + probabilityTopRight + probabilityBottomLeft + probabilityBottomRight + probabilityCenterTop + probabilityCenterLeft)) {
+    else if (positionRoll < (probabilityTopLeft + probabilityTopRight + probabilityBottomLeft + probabilityBottomRight + probabilityCenterTop + probabilityCenterLeft)) 
         StarShape.setPosition((l_row - l_startRow) * sectorSize + starGlobalBounds.width + starGlobalBounds.width - OffsetX, (l_column - l_startColumn) * sectorSize + sectorSize / 2 - OffsetY);
-    }
+    
 
     //Center Right
-    else if (positionRoll < (probabilityTopLeft + probabilityTopRight + probabilityBottomLeft + probabilityBottomRight + probabilityCenterTop + probabilityCenterLeft + probabilityCenterRight)) {
+    else if (positionRoll < (probabilityTopLeft + probabilityTopRight + probabilityBottomLeft + probabilityBottomRight + probabilityCenterTop + probabilityCenterLeft + probabilityCenterRight)) 
         StarShape.setPosition((l_row - l_startRow) * sectorSize + sectorSize - starGlobalBounds.width - OffsetX, (l_column - l_startColumn) * sectorSize + sectorSize / 2 - OffsetY);
-    }
+    
 
     //Center
-    else {
+    else 
         StarShape.setPosition((l_row - l_startRow) * sectorSize + sectorSize / 2 - OffsetX, (l_column - l_startColumn) * sectorSize + sectorSize / 2 - OffsetY);
-    }
+    
 
 }
 
