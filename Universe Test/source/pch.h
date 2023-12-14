@@ -82,6 +82,9 @@ public:
 	static void SetSectorSize(const int64_t* l_sectorSize) {	Get().m_sectorSize = l_sectorSize;	}
 	static void SetWindow(sf::RenderWindow* l_window) {	Get().m_window = l_window;	}
 	static void SetTime(sf::Time* l_time) {	Get().m_time = l_time;	}
+	static void SetView(sf::View* l_view) {	Get().m_view = l_view;	}
+	static void SetUserX(double* l_userX) {	Get().m_userX = l_userX;	}
+	static void SetUserY(double* l_userY) {	Get().m_userY = l_userY;	}
 
 	//Getters
 	static std::mt19937_64* GetRNG() {	return Get().m_rng;	}
@@ -89,6 +92,9 @@ public:
 	const static int64_t& GetSectorSize() {	return *Get().m_sectorSize;	}
 	static sf::RenderWindow* GetWindow() {	return Get().m_window;	}
 	static sf::Time& GetTime() {	return *Get().m_time;	}
+	static sf::View& GetView() {	return *Get().m_view;	}
+	static double& GetUserX() {	return *Get().m_userX;	}
+	static double& GetUserY() {	return *Get().m_userY;	}
 
 private:
 	// Function to map int64_tegers to non-negative int64_tegers for Cantor pairing
@@ -102,4 +108,8 @@ private:
 	const int64_t* m_sectorSize = nullptr;
 	sf::RenderWindow* m_window = nullptr;
 	sf::Time * m_time = nullptr;
+	sf::View* m_view = nullptr;
+	double *m_userX = nullptr;
+	double *m_userY = nullptr;
+
 };

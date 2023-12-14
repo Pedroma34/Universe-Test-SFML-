@@ -6,22 +6,24 @@ const int64_t WindowWidth           = 2560;               //2k is 2560x1440, 4k 
 const int64_t WindowHeight          = 1440;
 const int64_t ViewWidth		        = 1000;
 const int64_t ViewHeight            = 800;
-double UserX                       = 0;                   // Position of user in the universe (in pixels, devide by SectorSize to get sector coords)
-double UserY                       = 0;
-double VelocityX = 0.0, VelocityY = 0.0;                  // Velocity
-double MaxVelocity = 1000;                                // Maximum velocity
-double Acceleration = 1200;                                // Acceleration
-double Friction = 0.95;                                   // Damping factor
+double UserX                        = 0;                  // Position of user in the universe (in pixels, devide by SectorSize to get sector coords)
+double UserY                        = 0;
+double VelocityX                    = 0.0, 
+VelocityY                           = 0.0;                  
+double MaxVelocity                  = 1000;               // Maximum velocity
+double Acceleration                 = 2000;               // Acceleration
+double Friction                     = 0.97;               // Damping factor
 double OffsetX;                                           // Calculate the pixel offset within the current sector
 double OffsetY;                                           // Calculate the pixel offset within the current sector
-double StarSystemProbability        = 0.05;               // Probability of a star system appearing in a sector
-const int64_t SectorSize            = 50;	              // Sector size in pixels
+double StarSystemProbability        = 0.90;               // Probability of a star system appearing in a sector
+const int64_t SectorSize            = 100;	              // Sector size in pixels
 bool Debug                          = true;               // Debug flag to draw sector shapes
-bool IsDragging = false;
+bool IsDragging                     = false;
 sf::Vector2i LastMousePos;
 uint64_t SectorsDrawn               = 0;                  // Counter to track the number of sectors drawn
 sf::Vector2i SectorCoordsOnMouse    = sf::Vector2i(0,0);  // Sector coordinates of the sector under the mouse cursor
 sf::Vector2i MouseWorldPosition     = sf::Vector2i(0,0);
+uint64_t StarsVisible               = 0;
 std::vector<std::unique_ptr<sf::Shape>> DrawQueue;        // Queue of shapes to draw. Shapes are allocated when shape is pushed and vector is cleared when drawn.
         
 
@@ -59,7 +61,8 @@ bool IsMouseOnSector(int64_t l_row, int64_t l_column, int64_t l_startColumn, int
 
 int main() {
     SharedData::SetSectorSize(&SectorSize);
-
+    SharedData::SetUserX(&UserX);
+    SharedData::SetUserY(&UserY);
 
     sf::RenderWindow window(sf::VideoMode(WindowWidth, WindowHeight), "Infinite Universe");
     SharedData::SetWindow(&window);
@@ -67,6 +70,7 @@ int main() {
     sf::View view;
     view.reset(sf::FloatRect(0, 0, ViewWidth, ViewHeight));
     window.setView(view);
+    SharedData::SetView(&view);
 
     //Imgui
     ImGui::SFML::Init(window);
@@ -174,7 +178,8 @@ int main() {
             ImGui::Begin("Test");
             ImGui::SetWindowPos(ImVec2(0, 0));
             ImGui::SetWindowFontScale(2.0f);
-            ImGui::Text("Star system probability: %f", StarSystemProbability);
+            ImGui::Text(std::string("FPS: " + std::to_string(1.0f / time.asSeconds())).c_str());
+            ImGui::Text(std::string("System Probability: " + std::to_string(StarSystemProbability * 100)).c_str());
             ImGui::Text(std::string("UserX: " + std::to_string((int64_t)UserX / SectorSize)).c_str());
             ImGui::Text(std::string("UserY: " + std::to_string((int64_t)UserY / SectorSize)).c_str());
             ImGui::Text("Sectors drawn: %d", SectorsDrawn);
@@ -239,49 +244,7 @@ void DrawStarSystems(int64_t l_row, int64_t l_column, int64_t l_startRow, int64_
     const sf::FloatRect& starGlobalBounds = starShape.getGlobalBounds();
 
 
-    std::uniform_real_distribution<double> dist(0.0, 1.0);
-
-    double positionRoll = dist(rng);
-    const double probabilityTopLeft     = 0.125;
-    const double probabilityTopRight    = 0.125;
-    const double probabilityBottomLeft  = 0.125;
-    const double probabilityBottomRight = 0.125;
-    const double probabilityCenterTop   = 0.125;
-    const double probabilityCenterLeft  = 0.125;
-    const double probabilityCenterRight = 0.125;
-    const double probabilityCenter      = 0.125;
-
-    //Top left
-    if (positionRoll < probabilityTopLeft) 
-        starShape.setPosition((l_row - l_startRow) * SectorSize + starGlobalBounds.width - OffsetX, (l_column - l_startColumn) * SectorSize + starGlobalBounds.height - OffsetY);
-	
-    //Top Right
-    else if (positionRoll < (probabilityTopLeft + probabilityTopRight)) 
-        starShape.setPosition((l_row - l_startRow) * SectorSize + SectorSize - starGlobalBounds.width - OffsetX, (l_column - l_startColumn) * SectorSize + starGlobalBounds.height - OffsetY);
-	
-    //Bottom Left
-    else if (positionRoll < (probabilityTopLeft + probabilityTopRight + probabilityBottomLeft)) 
-        starShape.setPosition((l_row - l_startRow) * SectorSize + starGlobalBounds.width - OffsetX, (l_column - l_startColumn) * SectorSize + SectorSize - starGlobalBounds.height - OffsetY);
-	
-    //Bottom Right
-    else if (positionRoll < (probabilityTopLeft + probabilityTopRight + probabilityBottomLeft + probabilityBottomRight)) 
-        starShape.setPosition((l_row - l_startRow) * SectorSize + SectorSize - starGlobalBounds.width - OffsetX, (l_column - l_startColumn) * SectorSize + SectorSize - starGlobalBounds.height - OffsetY);
-	
-    //Center Top
-	else if (positionRoll < (probabilityTopLeft + probabilityTopRight + probabilityBottomLeft + probabilityBottomRight + probabilityCenterTop))
-        starShape.setPosition((l_row - l_startRow) * SectorSize + SectorSize  / 2 - OffsetX, (l_column - l_startColumn) * SectorSize + starGlobalBounds.height - OffsetY);
-    
-    //Center Left
-    else if (positionRoll < (probabilityTopLeft + probabilityTopRight + probabilityBottomLeft + probabilityBottomRight + probabilityCenterTop + probabilityCenterLeft))
-        starShape.setPosition((l_row - l_startRow) * SectorSize + starGlobalBounds.width + starGlobalBounds.width - OffsetX, (l_column - l_startColumn) * SectorSize + SectorSize / 2 - OffsetY);
-    
-    //Center Right
-    else if (positionRoll < (probabilityTopLeft + probabilityTopRight + probabilityBottomLeft + probabilityBottomRight + probabilityCenterTop + probabilityCenterLeft + probabilityCenterRight))
-        starShape.setPosition((l_row - l_startRow) * SectorSize + SectorSize - starGlobalBounds.width - OffsetX, (l_column - l_startColumn) * SectorSize + SectorSize / 2 - OffsetY);
-    
-    //Center
-    else 
-        starShape.setPosition((l_row - l_startRow) * SectorSize + SectorSize / 2 - OffsetX, (l_column - l_startColumn) * SectorSize + SectorSize / 2 - OffsetY);
+    starSystem.SetStarPositionInSector(l_row, l_column, l_startColumn, l_startRow);
 
     DrawQueue.push_back(std::make_unique<sf::CircleShape>(starSystem.StarShape));
 }
@@ -297,7 +260,7 @@ void DrawSectorsShape(int64_t l_row, int64_t l_column, int64_t l_startColumn, in
     sf::RectangleShape sectorShape(sf::Vector2f(SectorSize, SectorSize));
 	sectorShape.setFillColor(sf::Color::Transparent);
 	sectorShape.setOutlineColor(sf::Color::White);
-	sectorShape.setOutlineThickness(1);
+	sectorShape.setOutlineThickness(0.35);
     sectorShape.setPosition((l_row - l_startColumn) * SectorSize - OffsetX, (l_column - l_startRow) * SectorSize - OffsetY);
     DrawQueue.push_back(std::make_unique<sf::RectangleShape>(sectorShape));
 
@@ -323,26 +286,28 @@ void DrawSectorsShape(int64_t l_row, int64_t l_column, int64_t l_startColumn, in
 
 void DrawStarSelected(int64_t l_row, int64_t l_column, int64_t l_startColumn, int64_t l_startRow) {
 
+    if (!IsMouseOnSector(l_row, l_column, l_startColumn, l_startRow))
+        return;
 
-   // if (IsMouseOnSector(l_row, l_column, l_startColumn, l_startRow)) {
+    //Checking if sector has star
+    if (!DoesSectorHaveStarSystem(l_row, l_column, l_startColumn, l_startRow, *SharedData::GetRNG()))
+	    return;
+    
+    //Getting star system data
+    StarSystem starSystem(l_row, l_column);
+    sf::CircleShape&     starShape        = starSystem.StarShape;
+    const sf::FloatRect& starGlobalBounds = starShape.getGlobalBounds();
+    starSystem.SetStarPositionInSector(l_row, l_column, l_startColumn, l_startRow);
 
-   //     //Checking if sector has star
-   //     if (!DoesSectorHaveStarSystem(l_row, l_column, l_startColumn, l_startRow, l_rng))
-			//return;
-   //     
-   //     //Getting star system data
-   //     StarSystem starSystem;
-   //     sf::CircleShape&     starShape        = starSystem.StarShape;
-   //     const sf::FloatRect& starGlobalBounds = starShape.getGlobalBounds();
-
-   //     //Drawing a square around the star system
-   //     sf::RectangleShape starSelected(sf::Vector2f(starGlobalBounds.width * 2, starGlobalBounds.height * 2));
-   //     starSelected.setFillColor(sf::Color::Transparent);
-   //     starSelected.setOutlineColor(sf::Color::White);
-   //     starSelected.setOutlineThickness(1);
-   //     starSelected.setPosition(starShape.getPosition().x - starGlobalBounds.width, starShape.getPosition().y - starGlobalBounds.height);
-   //     l_window.draw(starSelected);
-   // }
+    //Drawing a square around the star system
+    /*auto& debugRect = starSystem.DebugStarSelectorShape;
+    debugRect.setPosition(starShape.getPosition());*/
+    sf::CircleShape debugRect(starGlobalBounds.width * 2);
+    debugRect.setPosition(starShape.getPosition());
+    debugRect.setFillColor(sf::Color::Transparent);
+    debugRect.setOutlineColor(sf::Color::Red);
+    debugRect.setOutlineThickness(1);
+    DrawQueue.push_back(std::make_unique<sf::CircleShape>(debugRect));
 }
 
 
@@ -374,7 +339,7 @@ void ProccessVisibleUniverse() {
             //Drawing//
             DrawStarSystems(x, y, startSectorX, startSectorY);
             DrawSectorsShape(x, y, startSectorX, startSectorY);
-            // DrawStarSelected(x, y, startSectorX, startSectorY);
+            DrawStarSelected(x, y, startSectorX, startSectorY);
 
             count++;
         }
