@@ -13,6 +13,7 @@ struct StarSystem {
     sf::CircleShape StarShape;
     StarSize Size;
     StarColor Color;
+    sf::Vector2f Position;
     bool HasStar;
     sf::CircleShape DebugStarSelectorShape;
 

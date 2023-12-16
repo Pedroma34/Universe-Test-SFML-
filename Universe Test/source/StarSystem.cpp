@@ -54,6 +54,7 @@ void StarSystem::SetStarPositionInSector(int64_t l_row, int64_t l_column, int64_
 			continue;
 
         StarShape.setPosition(position.second);
+        Position = position.second;
         return;
     }
 

@@ -21,10 +21,10 @@ bool Debug                          = false;              // Debug flag to draw 
 bool IsDragging                     = false;
 sf::Vector2i LastMousePos;
 uint64_t SectorsDrawn               = 0;                  // Counter to track the number of sectors drawn
-sf::Vector2i SectorCoordsOnMouse    = sf::Vector2i(0,0);  // Sector coordinates of the sector under the mouse cursor
+sf::Vector2i SectorCoordsOnMouse    = sf::Vector2i(0,0);  // Sector coordinates of under the mouse cursor
 sf::Vector2i MouseWorldPosition     = sf::Vector2i(0,0);
 uint64_t StarsVisible               = 0;
-std::vector<sf::Vector2i> StarsPositions;                 //Stores the positions of the stars in the visible universe.
+std::vector<std::unique_ptr<StarSystem>> StarSystems;     // Stores the star systems in the visible universe
 std::vector<std::unique_ptr<sf::Shape>> DrawQueue;        // Queue of shapes to draw. Shapes are allocated when shape is pushed and vector is cleared when drawn.
         
 
@@ -36,7 +36,7 @@ void DrawStarSystems(int64_t l_row, int64_t l_column, int64_t l_startColumn, int
 void DrawSectorsShape(int64_t l_row, int64_t l_column, int64_t l_startColumn, int64_t l_startRow);
 
 
-void DrawStarSelected(int64_t l_row, int64_t l_column, int64_t l_startColumn, int64_t l_startRow);
+void DrawStarSelector(int64_t l_row, int64_t l_column, int64_t l_startColumn, int64_t l_startRow);
 
 
 // Proccess visible universe, looping through visible sectors. Other functions, such as DrawStarSystems, are called inside this function
@@ -52,6 +52,9 @@ void ProccessDrawQueue();
 
 
 void ProccessVelocityAndPosition();
+
+
+void DisplayStarSystemInfo(const StarSystem& l_starSystem);
 
 
 bool DoesSectorHaveStarSystem(int64_t l_row, int64_t l_column, int64_t l_startColumn, int64_t l_startRow, std::mt19937_64& l_rng);
@@ -215,8 +218,7 @@ int main() {
 
         //Late Update
         time = clock.restart();
-        uint64_t starPositionVectorSize = StarsPositions.size();
-        StarsPositions.clear();
+        StarSystems.clear();
         //End Late Update//
         
         
@@ -248,7 +250,7 @@ void DrawStarSystems(int64_t l_row, int64_t l_column, int64_t l_startRow, int64_
 
 
     starSystem.SetStarPositionInSector(l_row, l_column, l_startColumn, l_startRow);
-    StarsPositions.push_back(sf::Vector2i(starShape.getPosition().x, starShape.getPosition().y));
+    StarSystems.push_back(std::make_unique<StarSystem>(starSystem));
 
     DrawQueue.push_back(std::make_unique<sf::CircleShape>(starSystem.StarShape));
 }
@@ -288,45 +290,42 @@ void DrawSectorsShape(int64_t l_row, int64_t l_column, int64_t l_startColumn, in
 }
 
 
-void DrawStarSelected(int64_t l_row, int64_t l_column, int64_t l_startColumn, int64_t l_startRow) {
+void DrawStarSelector(int64_t l_row, int64_t l_column, int64_t l_startColumn, int64_t l_startRow) {
 
-    //Check if mouse is on sector, then if sector has a star system, then if mouse is exactly on the star system. We can get the size of stars
-    // by generating a star system and getting the size of the star. Then we can check if mouse is on the star by checking if mouse is inside the
-    // circle of the star.
     if (!IsMouseOnSector(l_row, l_column, l_startColumn, l_startRow))
         return;
     if (!DoesSectorHaveStarSystem(l_row, l_column, l_startColumn, l_startRow, *SharedData::GetRNG()))
         return;
 
-    //Creating Star System//
-    StarSystem starSystem(l_row, l_column);
-    if (!starSystem.HasStar)
-        return;
+    std::find_if(StarSystems.begin(), StarSystems.end(), [&](const std::unique_ptr<StarSystem>& starSystem) {
 
-    for (auto& starPosition : StarsPositions) {
+		const auto& starPosition = starSystem->StarShape.getPosition();
+		const auto& starGlobalBounds = starSystem->StarShape.getGlobalBounds();
 
-        //Checking if mouse is not on star, then continue
-        if (starPosition.x < (l_row - l_startColumn) * SectorSize - OffsetX || starPosition.x > (l_row - l_startColumn) * SectorSize + SectorSize - OffsetX ||
+		//Checking if mouse is not on star, then continue
+		if (starPosition.x < (l_row - l_startColumn) * SectorSize - OffsetX || starPosition.x > (l_row - l_startColumn) * SectorSize + SectorSize - OffsetX ||
             starPosition.y < (l_column - l_startRow) * SectorSize - OffsetY || starPosition.y > (l_column - l_startRow) * SectorSize + SectorSize - OffsetY)
-            continue;
+			return false;
+
+		sf::RectangleShape starSelectorShape(sf::Vector2f(starGlobalBounds.width * 2, starGlobalBounds.width * 2));
+		starSelectorShape.setOrigin(starSelectorShape.getGlobalBounds().width / 2, starSelectorShape.getGlobalBounds().height / 2);
+		starSelectorShape.setPosition(starPosition.x, starPosition.y);
+		starSelectorShape.setFillColor(sf::Color::Transparent);
+		starSelectorShape.setOutlineColor(sf::Color::White);
+		starSelectorShape.setOutlineThickness(1.5);
 
 
-        sf::RectangleShape starSelectorShape(sf::Vector2f(starSystem.StarShape.getGlobalBounds().width * 2, starSystem.StarShape.getGlobalBounds().width * 2));
-        starSelectorShape.setOrigin(starSelectorShape.getGlobalBounds().width / 2, starSelectorShape.getGlobalBounds().height / 2);
-        starSelectorShape.setPosition(starPosition.x, starPosition.y);
-        starSelectorShape.setFillColor(sf::Color::Transparent);
-        starSelectorShape.setOutlineColor(sf::Color::White);
-        starSelectorShape.setOutlineThickness(1.5);
+		if (!starSelectorShape.getGlobalBounds().contains(MouseWorldPosition.x, MouseWorldPosition.y))
+			return false;
 
-        if (!starSelectorShape.getGlobalBounds().contains(MouseWorldPosition.x, MouseWorldPosition.y))
-            return;
-        
-        DrawQueue.push_back(std::make_unique<sf::RectangleShape>(starSelectorShape));
-        break;
-        
 
-    }
+        DisplayStarSystemInfo(*starSystem);
 
+
+		DrawQueue.push_back(std::make_unique<sf::RectangleShape>(starSelectorShape));
+		return true;
+
+	});
 }
 
 
@@ -362,7 +361,7 @@ void ProccessVisibleUniverse() {
             //Drawing//
             DrawStarSystems(x, y, startSectorX, startSectorY);
             DrawSectorsShape(x, y, startSectorX, startSectorY);
-            DrawStarSelected(x, y, startSectorX, startSectorY);
+            DrawStarSelector(x, y, startSectorX, startSectorY);
 
             count++;
         }
@@ -394,6 +393,17 @@ void ProccessVelocityAndPosition() {
         VelocityY = MaxVelocity;
     if (VelocityY < -MaxVelocity)
         VelocityY = -MaxVelocity;
+}
+
+void DisplayStarSystemInfo(const StarSystem& l_starSystem) {
+    ImGui::Begin("Star System Info");
+    //Displaying window on bottom right corner
+    ImGui::SetWindowPos(ImVec2(WindowWidth - (WindowWidth * 0.25), WindowHeight - (WindowHeight * 0.25)));
+	ImGui::SetWindowFontScale(2.0f);
+    ImGui::Text(std::string("Sector Coords: " + std::to_string(SectorCoordsOnMouse.x) + ", " + std::to_string(SectorCoordsOnMouse.y)).c_str());
+    ImGui::Text(std::string("Star System Size: " + std::to_string((int64_t)l_starSystem.Size)).c_str());
+	ImGui::Text(std::string("Star System Color: " + std::to_string((int64_t)l_starSystem.Color)).c_str());
+	ImGui::End();
 }
 
 
