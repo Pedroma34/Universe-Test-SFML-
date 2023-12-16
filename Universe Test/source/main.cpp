@@ -68,9 +68,17 @@ int main() {
     SharedData::SetUserX(&UserX);
     SharedData::SetUserY(&UserY);
 
-    sf::RenderWindow window(sf::VideoMode(WindowWidth, WindowHeight), "Infinite Universe");
+    sf::RenderWindow window(sf::VideoMode(WindowWidth, WindowHeight), "Infinite Universe", sf::Style::Default);
     SharedData::SetWindow(&window);
     window.setVerticalSyncEnabled(true);
+
+    //chaning mouse cursor to cross from system
+    sf::Cursor cursor;
+    cursor.loadFromSystem(sf::Cursor::Cross);
+    window.setMouseCursor(cursor);
+
+
+    //View
     sf::View view;
     view.reset(sf::FloatRect(0, 0, ViewWidth, ViewHeight));
     int zoomLimit = 4; //How much it will be devided by when zooming in
@@ -85,6 +93,8 @@ int main() {
     sf::Time time;
     sf::Clock clock;
     SharedData::SetTime(&time);
+
+
 
 
     // Random number generator and distribution
@@ -307,13 +317,8 @@ void DrawStarSelector(int64_t l_row, int64_t l_column, int64_t l_startColumn, in
             starPosition.y < (l_column - l_startRow) * SectorSize - OffsetY || starPosition.y > (l_column - l_startRow) * SectorSize + SectorSize - OffsetY)
 			return false;
 
-		sf::RectangleShape starSelectorShape(sf::Vector2f(starGlobalBounds.width * 2, starGlobalBounds.width * 2));
-		starSelectorShape.setOrigin(starSelectorShape.getGlobalBounds().width / 2, starSelectorShape.getGlobalBounds().height / 2);
-		starSelectorShape.setPosition(starPosition.x, starPosition.y);
-		starSelectorShape.setFillColor(sf::Color::Transparent);
-		starSelectorShape.setOutlineColor(sf::Color::White);
-		starSelectorShape.setOutlineThickness(1.5);
-
+        auto& starSelectorShape = starSystem->StarSelectorShape;
+        starSelectorShape.setPosition(starPosition.x, starPosition.y);
 
 		if (!starSelectorShape.getGlobalBounds().contains(MouseWorldPosition.x, MouseWorldPosition.y))
 			return false;
@@ -397,13 +402,13 @@ void ProccessVelocityAndPosition() {
 
 void DisplayStarSystemInfo(const StarSystem& l_starSystem) {
     //Disabling resizing window
-    ImGui::Begin("Star System Info", NULL, ImGuiWindowFlags_NoResize);
+    ImGui::Begin("Star System Info", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
     ImGui::SetWindowSize(ImVec2(SharedData::GetWindow()->getSize().x / 6, SharedData::GetWindow()->getSize().y / 8));
     sf::Vector2i windowSize = sf::Vector2i(ImGui::GetWindowSize().x, ImGui::GetWindowSize().y);
-    sf::Vector2i sectorPositionOnScreen = (sf::Vector2i)SharedData::GetWindow()->mapCoordsToPixel(l_starSystem.StarShape.getPosition());
-	ImGui::SetWindowPos(ImVec2((sectorPositionOnScreen.x - l_starSystem.StarShape.getGlobalBounds().width) - windowSize.x / 2, 
-                                sectorPositionOnScreen.y + l_starSystem.StarShape.getGlobalBounds().height * 3));
-    ImGui::SetWindowFontScale(2.0f);
+    sf::Vector2i sectorPositionOnScreen = (sf::Vector2i)SharedData::GetWindow()->mapCoordsToPixel(l_starSystem.StarSelectorShape.getPosition());
+	ImGui::SetWindowPos(ImVec2((sectorPositionOnScreen.x - l_starSystem.StarSelectorShape.getGlobalBounds().width) - windowSize.x / 2,
+                                sectorPositionOnScreen.y + l_starSystem.StarSelectorShape.getGlobalBounds().height));
+    ImGui::SetWindowFontScale(2.f);
     ImGui::Text(std::string("Sector Coords: " + std::to_string(SectorCoordsOnMouse.x) + ", " + std::to_string(SectorCoordsOnMouse.y)).c_str());
     ImGui::Text(std::string("Star System Size: " + l_starSystem.GetStarSizeString()).c_str());
     ImGui::Text(std::string("Star System Color: " + l_starSystem.GetStarColorString()).c_str());

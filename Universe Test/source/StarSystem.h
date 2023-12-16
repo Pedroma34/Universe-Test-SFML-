@@ -11,11 +11,11 @@ struct StarSystem {
     void SetStarPositionInSector(int64_t l_row, int64_t l_column, int64_t l_startColumn, int64_t l_startRow);
 
     sf::CircleShape StarShape;
+    sf::RectangleShape StarSelectorShape;
     StarSize Size;
     StarColor Color;
     sf::Vector2f Position;
     bool HasStar;
-    sf::CircleShape DebugStarSelectorShape;
 
     std::string GetStarSizeString()  const;
     std::string GetStarColorString() const;

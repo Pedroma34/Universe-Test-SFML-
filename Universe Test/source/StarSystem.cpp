@@ -23,7 +23,6 @@ void StarSystem::SetStarPositionInSector(int64_t l_row, int64_t l_column, int64_
     auto& rng = *SharedData::GetRNG();
     const int64_t& sectorSize = SharedData::GetSectorSize();
     const auto& starGlobalBounds = StarShape.getGlobalBounds();
-    const auto& selectorGlobalBounds = DebugStarSelectorShape.getGlobalBounds();
     const double& UserX = SharedData::GetUserX();
     const double& UserY = SharedData::GetUserY();
     double OffsetX = fmod(UserX, sectorSize);
@@ -143,6 +142,14 @@ void StarSystem::DetermineStarSize(std::mt19937_64& l_rng) {
 		StarShape.setRadius(sizeProbability.second);
 		//Setting origin to middle
 		StarShape.setOrigin(StarShape.getGlobalBounds().width / 2, StarShape.getGlobalBounds().height / 2);
+
+        //Selector shape
+        StarSelectorShape.setSize(sf::Vector2f(StarShape.getGlobalBounds().width * 2, StarShape.getGlobalBounds().height* 2));
+        StarSelectorShape.setOrigin(StarSelectorShape.getGlobalBounds().width / 2, StarSelectorShape.getGlobalBounds().height / 2);
+        StarSelectorShape.setFillColor(sf::Color::Transparent);
+        StarSelectorShape.setOutlineColor(sf::Color::White);
+        StarSelectorShape.setOutlineThickness(1.5);
+
 
 		return;
 	}
