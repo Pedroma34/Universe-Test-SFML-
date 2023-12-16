@@ -310,12 +310,6 @@ void DrawStarSelected(int64_t l_row, int64_t l_column, int64_t l_startColumn, in
             starPosition.y < (l_column - l_startRow) * SectorSize - OffsetY || starPosition.y > (l_column - l_startRow) * SectorSize + SectorSize - OffsetY)
             continue;
 
-        /*sf::CircleShape starSelectorShape(starSystem.Size);
-        starSelectorShape.setOrigin(starSelectorShape.getGlobalBounds().width / 2, starSelectorShape.getGlobalBounds().height / 2);
-        starSelectorShape.setPosition(starPosition.x, starPosition.y);
-        starSelectorShape.setFillColor(sf::Color::Transparent);
-        starSelectorShape.setOutlineColor(sf::Color::Red);
-        starSelectorShape.setOutlineThickness(1);*/
 
         sf::RectangleShape starSelectorShape(sf::Vector2f(starSystem.StarShape.getGlobalBounds().width * 2, starSystem.StarShape.getGlobalBounds().width * 2));
         starSelectorShape.setOrigin(starSelectorShape.getGlobalBounds().width / 2, starSelectorShape.getGlobalBounds().height / 2);

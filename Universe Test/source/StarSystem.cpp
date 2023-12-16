@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "StarSystem.h"
 
-StarSystem::StarSystem(int64_t l_x, int64_t l_y) : Color(sf::Color::Yellow), Size(5), HasStar(false) {
+StarSystem::StarSystem(int64_t l_x, int64_t l_y) : Color(StarColor::White), Size(StarSize::Medium), HasStar(false) {
     
     std::mt19937_64& rng = *SharedData::GetRNG();
     const double& StarSystemProbability = SharedData::GetStarSystemProbability();
@@ -31,14 +31,14 @@ void StarSystem::SetStarPositionInSector(int64_t l_row, int64_t l_column, int64_
 
     //Chance and position
     std::vector<std::pair<double, sf::Vector2f>> positions{
-        /*Top Left*/     {0.125, sf::Vector2f((l_row - l_startRow) * sectorSize + starGlobalBounds.width - OffsetX, (l_column - l_startColumn) * sectorSize + starGlobalBounds.height - OffsetY)                           }, 
-        /*Top Right*/    {0.125, sf::Vector2f((l_row - l_startRow) * sectorSize + sectorSize - starGlobalBounds.width - OffsetX, (l_column - l_startColumn) * sectorSize + starGlobalBounds.height - OffsetY)              }, 
-        /*Bottom Left*/  {0.125, sf::Vector2f((l_row - l_startRow) * sectorSize + starGlobalBounds.width - OffsetX, (l_column - l_startColumn) * sectorSize + sectorSize - starGlobalBounds.height - OffsetY)              }, 
-        /*Bottom Right*/ {0.125, sf::Vector2f((l_row - l_startRow) * sectorSize + sectorSize - starGlobalBounds.width - OffsetX, (l_column - l_startColumn) * sectorSize + sectorSize - starGlobalBounds.height - OffsetY) }, 
-        /*Center Top*/   {0.125, sf::Vector2f((l_row - l_startRow) * sectorSize + sectorSize / 2 - OffsetX, (l_column - l_startColumn) * sectorSize + starGlobalBounds.height - OffsetY)                                   }, 
-        /*Center Left*/  {0.125, sf::Vector2f((l_row - l_startRow) * sectorSize + starGlobalBounds.width + starGlobalBounds.width - OffsetX, (l_column - l_startColumn) * sectorSize + sectorSize / 2 - OffsetY)           }, 
-        /*Center Right*/ {0.125, sf::Vector2f((l_row - l_startRow) * sectorSize + sectorSize - starGlobalBounds.width - OffsetX, (l_column - l_startColumn) * sectorSize + sectorSize / 2 - OffsetY)                       }, 
-        /*Center*/       {0.125, sf::Vector2f((l_row - l_startRow) * sectorSize + sectorSize / 2 - OffsetX, (l_column - l_startColumn) * sectorSize + sectorSize / 2 - OffsetY)                                            }, 
+        /*Top Left     */ {0.125, sf::Vector2f((l_row - l_startRow) * sectorSize + starGlobalBounds.width - OffsetX, (l_column - l_startColumn) * sectorSize + starGlobalBounds.height - OffsetY)                           }, 
+        /*Top Right    */ {0.125, sf::Vector2f((l_row - l_startRow) * sectorSize + sectorSize - starGlobalBounds.width - OffsetX, (l_column - l_startColumn) * sectorSize + starGlobalBounds.height - OffsetY)              }, 
+        /*Bottom Left  */ {0.125, sf::Vector2f((l_row - l_startRow) * sectorSize + starGlobalBounds.width - OffsetX, (l_column - l_startColumn) * sectorSize + sectorSize - starGlobalBounds.height - OffsetY)              }, 
+        /*Bottom Right */ {0.125, sf::Vector2f((l_row - l_startRow) * sectorSize + sectorSize - starGlobalBounds.width - OffsetX, (l_column - l_startColumn) * sectorSize + sectorSize - starGlobalBounds.height - OffsetY) }, 
+        /*Center Top   */ {0.125, sf::Vector2f((l_row - l_startRow) * sectorSize + sectorSize / 2 - OffsetX, (l_column - l_startColumn) * sectorSize + starGlobalBounds.height - OffsetY)                                   }, 
+        /*Center Left  */ {0.125, sf::Vector2f((l_row - l_startRow) * sectorSize + starGlobalBounds.width + starGlobalBounds.width - OffsetX, (l_column - l_startColumn) * sectorSize + sectorSize / 2 - OffsetY)           }, 
+        /*Center Right */ {0.125, sf::Vector2f((l_row - l_startRow) * sectorSize + sectorSize - starGlobalBounds.width - OffsetX, (l_column - l_startColumn) * sectorSize + sectorSize / 2 - OffsetY)                       }, 
+        /*Center       */ {0.125, sf::Vector2f((l_row - l_startRow) * sectorSize + sectorSize / 2 - OffsetX, (l_column - l_startColumn) * sectorSize + sectorSize / 2 - OffsetY)                                            }, 
 	};
 
     std::uniform_real_distribution<double> dist(0.0, 1.0);
@@ -61,12 +61,17 @@ void StarSystem::SetStarPositionInSector(int64_t l_row, int64_t l_column, int64_
 
 void StarSystem::DetermineStarSize(std::mt19937_64& l_rng) {
 
+    float medium = 6.0f;
+    float large = 9.0f;
+    float small = 4.0f;
+    float hyperLarge = 17.0f;
+
     //Chance and Size
     std::vector<std::pair<double, float>> sizeProbabilities = {
-        {0.55, 06.0f /*Medium*/       }, //55.0%
-        {0.25, 09.0f /*Large*/        }, //25.0%  
-        {0.18, 04.0f /*Small*/        }, //18.0% 
-        {0.02, 17.0f /*Hyper Large*/  }  //02.0%  
+        {0.55, medium     }, //55.0%
+        {0.25, large      }, //25.0%  
+        {0.18, small      }, //18.0% 
+        {0.02, hyperLarge }  //02.0%  
     };
 
     std::uniform_real_distribution<double> dist(0.0, 1.0);
@@ -81,8 +86,19 @@ void StarSystem::DetermineStarSize(std::mt19937_64& l_rng) {
 		if (sizeRoll > cumulativeProbability)
 			continue;
 
-		Size = sizeProbability.second;
-		StarShape.setRadius(Size);
+        //Checking and setting StarSize (6 is medium, 9 is large, 4 is small, 17 is hyper large)
+        if (sizeProbability.second == medium)
+			Size = StarSize::Medium;
+		else if (sizeProbability.second == large)
+			Size = StarSize::Large;
+		else if (sizeProbability.second == small)
+			Size = StarSize::Small;
+		else if (sizeProbability.second == hyperLarge)
+			Size = StarSize::HyperLarge;
+        else
+            throw std::runtime_error("StarSystem::DetermineStarSize() - Invalid StarSize");
+
+		StarShape.setRadius(sizeProbability.second);
 		//Setting origin to middle
 		StarShape.setOrigin(StarShape.getGlobalBounds().width / 2, StarShape.getGlobalBounds().height / 2);
 
@@ -92,16 +108,13 @@ void StarSystem::DetermineStarSize(std::mt19937_64& l_rng) {
 
 void StarSystem::DetermineStarColor(std::mt19937_64& l_rng) {
     
-    double maxChance = 1.0; //100%
-    double chance = 0.0;
-
     //Chance and Color
     std::vector<std::pair<double, sf::Color>> colorProbabilities = {
-		{ 0.525, sf::Color::Red                     }, //52.5%
-		{ 0.325, sf::Color(255, 69, 0)    /*Red*/   }, //32.5%
-        { 0.075, sf::Color(255, 255, 159) /*White*/ }, //07.5%
-		{ 0.050, sf::Color::Blue                    }, //05.0%
-        { 0.025, sf::Color(50, 23, 77)   /*Purple*/ }, //02.5%
+		{ 0.525, sf::Color::Red                      }, //52.5%
+		{ 0.325, sf::Color(255, 69, 0)    /*Orange*/ }, //32.5%
+        { 0.075, sf::Color(255, 255, 159) /*White*/  }, //07.5%
+		{ 0.050, sf::Color::Blue                     }, //05.0%
+        { 0.025, sf::Color(50, 23, 77)   /*Purple*/  }, //02.5%
 	};
 
     std::uniform_real_distribution<double> dist(0.0, 1.0);
@@ -115,6 +128,20 @@ void StarSystem::DetermineStarColor(std::mt19937_64& l_rng) {
 
         if (colorRoll > cumulativeProbability)
             continue;
+        //Checking and setting StarColor
+        if (colorProbability.second == sf::Color::Red)
+            Color = StarColor::Red;
+        else if (colorProbability.second == sf::Color(255, 69, 0))
+            Color = StarColor::Orange;
+		else if (colorProbability.second == sf::Color(255, 255, 159))
+			Color = StarColor::White;
+		else if (colorProbability.second == sf::Color::Blue)
+			Color = StarColor::Blue;
+		else if (colorProbability.second == sf::Color(50, 23, 77))
+			Color = StarColor::Purple;
+        else 
+           throw std::runtime_error("StarSystem::DetermineStarColor() - Invalid StarColor");
+
 
 		StarShape.setFillColor(colorProbability.second);
 
