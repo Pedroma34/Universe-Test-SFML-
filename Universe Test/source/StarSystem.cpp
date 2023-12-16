@@ -14,40 +14,8 @@ StarSystem::StarSystem(int64_t l_x, int64_t l_y) : Color(sf::Color::Yellow), Siz
         return; // No star
     HasStar = true;
 
-    // Determine the size of the star
-    double sizeRoll = dist(rng);
-    const double probabilitySmall = 0.40;
-    const double probabilityMedium = 0.55; 
-    const double probabilityLarge = 0.05;
-    if(sizeRoll < probabilitySmall)
-		Size = 4;
-	else if (sizeRoll < (probabilitySmall + probabilityMedium))
-		Size = 6;
-	else
-		Size = 9;
-    StarShape.setRadius(Size);
-    //Setting origin to middle
-    StarShape.setOrigin(StarShape.getGlobalBounds().width / 2, StarShape.getGlobalBounds().height / 2);
-
-    // Determine the color of the star
-    double colorRoll = dist(rng);
-    const double probabilityYellow = 0.10;
-    const double probabilityBlue = 0.05; 
-    const double probabilityOrange = 0.10;
-    const double probabilityWhite = 0.10;
-    const double probabilityRed = 0.65; 
-
-
-    if (colorRoll < probabilityYellow)
-        StarShape.setFillColor(sf::Color::Yellow);
-    else if (colorRoll < (probabilityYellow + probabilityBlue))
-        StarShape.setFillColor(sf::Color::Blue);
-    else if (colorRoll < (probabilityYellow + probabilityBlue + probabilityOrange))
-        StarShape.setFillColor(sf::Color(255, 165, 0));
-    else if (colorRoll < (probabilityYellow + probabilityBlue + probabilityOrange + probabilityWhite))
-        StarShape.setFillColor(sf::Color::White);
-    else
-        StarShape.setFillColor(sf::Color::Red);
+    DetermineStarSize(rng);
+    DetermineStarColor(rng);
 }
 
 void StarSystem::SetStarPositionInSector(int64_t l_row, int64_t l_column, int64_t l_startColumn, int64_t l_startRow) {
@@ -115,3 +83,42 @@ void StarSystem::SetStarPositionInSector(int64_t l_row, int64_t l_column, int64_
 
 }
 
+void StarSystem::DetermineStarSize(std::mt19937_64& l_rng) {
+    std::uniform_real_distribution<double> dist(0.0, 1.0);
+    double sizeRoll = dist(l_rng);
+    const double probabilitySmall = 0.40;
+    const double probabilityMedium = 0.55;
+    const double probabilityLarge = 0.05;
+    if (sizeRoll < probabilitySmall)
+        Size = 4;
+    else if (sizeRoll < (probabilitySmall + probabilityMedium))
+        Size = 6;
+    else
+        Size = 9;
+    StarShape.setRadius(Size);
+    //Setting origin to middle
+    StarShape.setOrigin(StarShape.getGlobalBounds().width / 2, StarShape.getGlobalBounds().height / 2);
+}
+
+void StarSystem::DetermineStarColor(std::mt19937_64& l_rng) {
+    
+    std::uniform_real_distribution<double> dist(0.0, 1.0);
+    double colorRoll = dist(l_rng);
+
+    const double probabilityRed = 0.65;
+    const double probabilityYellow = 0.10;
+    const double probabilityOrange = 0.10;
+    const double probabilityWhite = 0.10;
+    const double probabilityBlue = 0.05;
+
+    if (colorRoll < probabilityYellow)
+        StarShape.setFillColor(sf::Color::Yellow);
+    else if (colorRoll < (probabilityYellow + probabilityBlue))
+        StarShape.setFillColor(sf::Color::Blue);
+    else if (colorRoll < (probabilityYellow + probabilityBlue + probabilityOrange))
+        StarShape.setFillColor(sf::Color(255, 165, 0));
+    else if (colorRoll < (probabilityYellow + probabilityBlue + probabilityOrange + probabilityWhite))
+        StarShape.setFillColor(sf::Color::White);
+    else
+        StarShape.setFillColor(sf::Color::Red);
+}
