@@ -17,6 +17,9 @@ struct StarSystem {
     bool HasStar;
     sf::CircleShape DebugStarSelectorShape;
 
+    std::string GetStarSizeString()  const;
+    std::string GetStarColorString() const;
+
 private:
     void DetermineStarSize(std::mt19937_64& l_rng);
     void DetermineStarColor(std::mt19937_64& l_rng);

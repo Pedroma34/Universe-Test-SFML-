@@ -15,7 +15,7 @@ double Acceleration                 = 2000;               // Acceleration
 double Friction                     = 0.97;               // Damping factor
 double OffsetX;                                           // Calculate the pixel offset within the current sector
 double OffsetY;                                           // Calculate the pixel offset within the current sector
-double StarSystemProbability        = 0.30;               // Probability of a star system appearing in a sector
+double StarSystemProbability        = 0.15;               // Probability of a star system appearing in a sector
 const int64_t SectorSize            = 100;	              // Sector size in pixels
 bool Debug                          = false;              // Debug flag to draw sector shapes
 bool IsDragging                     = false;
@@ -396,13 +396,17 @@ void ProccessVelocityAndPosition() {
 }
 
 void DisplayStarSystemInfo(const StarSystem& l_starSystem) {
-    ImGui::Begin("Star System Info");
-    //Displaying window on bottom right corner
-    ImGui::SetWindowPos(ImVec2(WindowWidth - (WindowWidth * 0.25), WindowHeight - (WindowHeight * 0.25)));
-	ImGui::SetWindowFontScale(2.0f);
+    //Disabling resizing window
+    ImGui::Begin("Star System Info", NULL, ImGuiWindowFlags_NoResize);
+    ImGui::SetWindowSize(ImVec2(SharedData::GetWindow()->getSize().x / 6, SharedData::GetWindow()->getSize().y / 8));
+    sf::Vector2i windowSize = sf::Vector2i(ImGui::GetWindowSize().x, ImGui::GetWindowSize().y);
+    sf::Vector2i sectorPositionOnScreen = (sf::Vector2i)SharedData::GetWindow()->mapCoordsToPixel(l_starSystem.StarShape.getPosition());
+	ImGui::SetWindowPos(ImVec2((sectorPositionOnScreen.x - l_starSystem.StarShape.getGlobalBounds().width) - windowSize.x / 2, 
+                                sectorPositionOnScreen.y + l_starSystem.StarShape.getGlobalBounds().height * 3));
+    ImGui::SetWindowFontScale(2.0f);
     ImGui::Text(std::string("Sector Coords: " + std::to_string(SectorCoordsOnMouse.x) + ", " + std::to_string(SectorCoordsOnMouse.y)).c_str());
-    ImGui::Text(std::string("Star System Size: " + std::to_string((int64_t)l_starSystem.Size)).c_str());
-	ImGui::Text(std::string("Star System Color: " + std::to_string((int64_t)l_starSystem.Color)).c_str());
+    ImGui::Text(std::string("Star System Size: " + l_starSystem.GetStarSizeString()).c_str());
+    ImGui::Text(std::string("Star System Color: " + l_starSystem.GetStarColorString()).c_str());
 	ImGui::End();
 }
 

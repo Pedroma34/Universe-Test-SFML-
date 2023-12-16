@@ -60,6 +60,47 @@ void StarSystem::SetStarPositionInSector(int64_t l_row, int64_t l_column, int64_
 
 }
 
+std::string StarSystem::GetStarSizeString() const {
+    switch (Size) {
+	case StarSize::Small:
+        return "Small";
+        break;
+    case StarSize::Medium:
+        return "Medium";
+        break;
+    case StarSize::Large:
+        return "Large";
+        break;
+    case StarSize::HyperLarge:
+        return "Hyper Large";
+        break;
+	default:
+		throw std::runtime_error("StarSystem::GetStarSizeString() - Invalid StarSize");
+	}
+}
+
+std::string StarSystem::GetStarColorString() const {
+    switch (Color) {
+	case StarColor::Red:
+		return "Red";
+		break;
+	case StarColor::Orange:
+		return "Orange";
+		break;
+	case StarColor::White:
+		return "White";
+		break;
+	case StarColor::Blue:
+		return "Blue";
+		break;
+	case StarColor::Purple:
+		return "Purple";
+		break;
+	default:
+		throw std::runtime_error("StarSystem::GetStarColorString() - Invalid StarColor");
+	}
+}
+
 void StarSystem::DetermineStarSize(std::mt19937_64& l_rng) {
 
     float medium = 6.0f;
