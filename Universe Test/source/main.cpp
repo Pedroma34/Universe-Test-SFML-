@@ -15,9 +15,9 @@ double Acceleration                 = 2000;               // Acceleration
 double Friction                     = 0.97;               // Damping factor
 double OffsetX;                                           // Calculate the pixel offset within the current sector
 double OffsetY;                                           // Calculate the pixel offset within the current sector
-double StarSystemProbability        = 0.13;               // Probability of a star system appearing in a sector
+double StarSystemProbability        = 0.30;               // Probability of a star system appearing in a sector
 const int64_t SectorSize            = 100;	              // Sector size in pixels
-bool Debug                          = true;               // Debug flag to draw sector shapes
+bool Debug                          = false;              // Debug flag to draw sector shapes
 bool IsDragging                     = false;
 sf::Vector2i LastMousePos;
 uint64_t SectorsDrawn               = 0;                  // Counter to track the number of sectors drawn
@@ -71,7 +71,7 @@ int main() {
     sf::View view;
     view.reset(sf::FloatRect(0, 0, ViewWidth, ViewHeight));
     int zoomLimit = 4; //How much it will be devided by when zooming in
-    view.setSize(ViewWidth / zoomLimit, ViewHeight / zoomLimit);
+    view.setSize(ViewWidth / (zoomLimit / 2), ViewHeight / (zoomLimit / 2));
     window.setView(view);
     SharedData::SetView(&view);
 
@@ -90,8 +90,8 @@ int main() {
     SharedData::SetStarSystemProbability(&StarSystemProbability);
 
     //Setting user position
-    UserX = 10000 * SectorSize;
-    UserY = 10000 * SectorSize;
+    UserX = 54000 * SectorSize;
+    UserY = 54000 * SectorSize;
 
     while (window.isOpen()) {
         sf::Event event;
@@ -317,7 +317,7 @@ void DrawStarSelected(int64_t l_row, int64_t l_column, int64_t l_startColumn, in
         starSelectorShape.setOutlineColor(sf::Color::Red);
         starSelectorShape.setOutlineThickness(1);*/
 
-        sf::RectangleShape starSelectorShape(sf::Vector2f(starSystem.StarShape.getGlobalBounds().width * 1.5, starSystem.StarShape.getGlobalBounds().width * 1.5));
+        sf::RectangleShape starSelectorShape(sf::Vector2f(starSystem.StarShape.getGlobalBounds().width * 2, starSystem.StarShape.getGlobalBounds().width * 2));
         starSelectorShape.setOrigin(starSelectorShape.getGlobalBounds().width / 2, starSelectorShape.getGlobalBounds().height / 2);
         starSelectorShape.setPosition(starPosition.x, starPosition.y);
         starSelectorShape.setFillColor(sf::Color::Transparent);
