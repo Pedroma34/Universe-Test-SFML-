@@ -102,17 +102,17 @@ std::string StarSystem::GetStarColorString() const {
 
 void StarSystem::DetermineStarSize(std::mt19937_64& l_rng) {
 
-    float medium = 6.0f;
-    float large = 9.0f;
-    float small = 4.0f;
-    float hyperLarge = 17.0f;
+    float medium     = 8.0f;
+    float large      = 12.0f;
+    float small      = 4.0f;
+    float hyperLarge = 24.0f;
 
     //Chance and Size
     std::vector<std::pair<double, float>> sizeProbabilities = {
-        {0.55, medium     }, //55.0%
-        {0.25, large      }, //25.0%  
-        {0.18, small      }, //18.0% 
-        {0.02, hyperLarge }  //02.0%  
+        {0.565, medium     }, //56.5%
+        {0.250, large      }, //25.0%  
+        {0.180, small      }, //18.0% 
+        {0.005, hyperLarge }  //00.5%  
     };
 
     std::uniform_real_distribution<double> dist(0.0, 1.0);
