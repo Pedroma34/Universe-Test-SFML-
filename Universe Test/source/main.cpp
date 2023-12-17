@@ -130,6 +130,9 @@ int main() {
                     else {
                         view.zoom(0.95f);
                         view.setCenter(view.getSize().x / 2, view.getSize().y / 2);
+                        //Adjusting user position when zooming in
+                    	UserX += 0.24 * SectorSize;
+                        UserY += 0.24 * SectorSize;
                     }
                 }
                 else if (event.mouseWheelScroll.delta < 0) {
@@ -144,6 +147,9 @@ int main() {
                     else {
                         view.zoom(1.050f);
                         view.setCenter(view.getSize().x / 2, view.getSize().y / 2);
+                        //Adjusting user position when zooming out
+                        UserX -= 0.24 * SectorSize;
+                        UserY -= 0.24 * SectorSize;
                     }
                 }
 			}
@@ -354,6 +360,10 @@ void ProccessVisibleUniverse() {
     //Getting the center sector
     int64_t centerSectorX = endSectorX - view.getSize().x / SectorSize / 2;
     int64_t centerSectorY = endSectorY - view.getSize().y / SectorSize / 2;
+
+    //Convert centerSectorX to screen coords
+    sf::Vector2f centerSectorPosition = sf::Vector2f((centerSectorX - startSectorX) * SectorSize - OffsetX, (centerSectorY - startSectorY) * SectorSize - OffsetY);
+
 
     uint64_t count     = 0;
     uint64_t starCount = 0;
