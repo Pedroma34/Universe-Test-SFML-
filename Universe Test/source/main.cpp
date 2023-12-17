@@ -82,7 +82,6 @@ int main() {
     sf::View view;
     view.reset(sf::FloatRect(0, 0, ViewWidth, ViewHeight));
     int zoomLimit = 4; //How much it will be devided by when zooming in
-    view.setSize(ViewWidth / (zoomLimit / 2), ViewHeight / (zoomLimit / 2));
     window.setView(view);
     SharedData::SetView(&view);
 
@@ -128,8 +127,10 @@ int main() {
                     nextZoomSize.y *= 0.95f;
                     if (nextZoomSize.x < ViewWidth / zoomLimit && nextZoomSize.y < ViewHeight / zoomLimit)
                         view.setSize(ViewWidth / zoomLimit, ViewHeight / zoomLimit);
-					else
-						view.zoom(0.950f);
+                    else {
+                        view.zoom(0.95f);
+                        view.setCenter(view.getSize().x / 2, view.getSize().y / 2);
+                    }
                 }
                 else if (event.mouseWheelScroll.delta < 0) {
 
@@ -137,12 +138,14 @@ int main() {
                     sf::Vector2f nextZoomSize = view.getSize();
                     nextZoomSize.x *= 1.05f;
                     nextZoomSize.y *= 1.05f;
-                    if (nextZoomSize.x > ViewWidth && nextZoomSize.y > ViewHeight)
-						view.setSize(ViewWidth, ViewHeight);
-                    else
+                    float limit = 5;
+                    if (nextZoomSize.x > ViewWidth * limit && nextZoomSize.y > ViewHeight * limit)
+						view.setSize(ViewWidth * limit, ViewHeight * limit);
+                    else {
                         view.zoom(1.050f);
-                }              
-                
+                        view.setCenter(view.getSize().x / 2, view.getSize().y / 2);
+                    }
+                }
 			}
             if (event.type == sf::Event::MouseButtonPressed)
                 if (event.mouseButton.button == sf::Mouse::Right) {
@@ -340,14 +343,18 @@ void ProccessVisibleUniverse() {
     sf::RenderWindow& window = *SharedData::GetWindow();
     std::mt19937_64& rng = *SharedData::GetRNG();
 
-    // Calculate the range of sectors to render
-    int64_t startSectorX = static_cast<int64_t>(UserX / SectorSize) - ViewWidth / SectorSize / 2;
-    int64_t startSectorY = static_cast<int64_t>(UserY / SectorSize) - ViewHeight / SectorSize / 2;
-    int64_t endSectorX = startSectorX + ViewWidth / SectorSize + 2; // +2 to cover partially visible sectors
-    int64_t endSectorY = startSectorY + ViewHeight / SectorSize + 2;
+    auto& view = SharedData::GetView();
 
-    int64_t sectorX;
-    int64_t sectorY;
+    // Calculate the range of sectors to render
+    int64_t startSectorX = static_cast<int64_t>(UserX / SectorSize);
+    int64_t startSectorY = static_cast<int64_t>(UserY / SectorSize);
+    int64_t endSectorX = startSectorX + view.getSize().x / SectorSize + 2; // +2 to cover partially visible sectors
+    int64_t endSectorY = startSectorY + view.getSize().y / SectorSize + 2;
+
+    //Getting the center sector
+    int64_t centerSectorX = endSectorX - view.getSize().x / SectorSize / 2;
+    int64_t centerSectorY = endSectorY - view.getSize().y / SectorSize / 2;
+
     uint64_t count     = 0;
     uint64_t starCount = 0;
     for (int64_t x = startSectorX; x < endSectorX; ++x) {
