@@ -2,8 +2,8 @@
 #include "StarSystem.h"
 
 
-const int64_t WindowWidth           = 2560;               //2k is 2560x1440, 4k is 3840x2160, 1440p is 1920x1440
-const int64_t WindowHeight          = 1440;
+const int64_t WindowWidth           = 3840;               //2k is 2560x1440, 4k is 3840x2160, 1440p is 1920x1440
+const int64_t WindowHeight          = 2160;
 const int64_t ViewWidth		        = 1920;
 const int64_t ViewHeight            = 1080;
 double UserX                        = 0;                  // Position of user in the universe (in pixels, devide by SectorSize to get sector coords)
@@ -15,8 +15,8 @@ double Acceleration                 = 2000;               // Acceleration
 double Friction                     = 0.97;               // Damping factor
 double OffsetX;                                           // Calculate the pixel offset within the current sector
 double OffsetY;                                           // Calculate the pixel offset within the current sector
-double StarSystemProbability        = 0.15;               // Probability of a star system appearing in a sector
-const int64_t SectorSize            = 100;	              // Sector size in pixels
+double StarSystemProbability        = 0.12;               // Probability of a star system appearing in a sector
+const int64_t SectorSize            = 125;	              // Sector size in pixels
 bool Debug                          = false;              // Debug flag to draw sector shapes
 bool IsDragging                     = false;
 sf::Vector2i LastMousePos;
@@ -98,12 +98,19 @@ int main() {
 
     // Random number generator and distribution
     std::mt19937_64 rng;
+    std::random_device rd;
     SharedData::SetRNG(&rng);
     SharedData::SetStarSystemProbability(&StarSystemProbability);
 
+    //Generating random location for user
+    rng.seed(rd());
+    std::uniform_int_distribution<int64_t> dist(10000, 500000);
+    uint64_t randomLocation = dist(rng);
+
+
     //Setting user position
-    UserX = 54000 * SectorSize;
-    UserY = 54000 * SectorSize;
+    UserX = randomLocation * SectorSize;
+    UserY = randomLocation * SectorSize;
 
     while (window.isOpen()) {
         sf::Event event;
@@ -116,6 +123,14 @@ int main() {
             if (event.type == sf::Event::KeyPressed) {
                 if (event.key.code == sf::Keyboard::Tab)
 					Debug = !Debug;
+
+                if (event.key.code == sf::Keyboard::Space) {
+                    //Generate a random uint64_t from 10000 to 500000
+                    rng.seed(rd());
+					randomLocation = dist(rng);
+					UserX = randomLocation * SectorSize;
+					UserY = randomLocation * SectorSize;
+                }
             }
 
             //Mouse
