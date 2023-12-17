@@ -11,8 +11,9 @@ double UserY                        = 0;
 double VelocityX                    = 0.0, 
 VelocityY                           = 0.0;                  
 double MaxVelocity                  = 1000;               // Maximum velocity
+double OriginalMaxVelocity          = MaxVelocity;
 double Acceleration                 = 2000;               // Acceleration
-double Friction                     = 0.97;               // Damping factor
+double Friction                     = 0.992;               // Damping factor
 double OffsetX;                                           // Calculate the pixel offset within the current sector
 double OffsetY;                                           // Calculate the pixel offset within the current sector
 double StarSystemProbability        = 0.12;               // Probability of a star system appearing in a sector
@@ -221,6 +222,13 @@ int main() {
             ImGui::Text(std::string("FPS: " + std::to_string(1.0f / time.asSeconds())).c_str());
             ImGui::Text(std::string("System Probability: " + std::to_string(StarSystemProbability * 100)).c_str());
             ImGui::Text(std::string("Stars visible: " + std::to_string(StarsVisible)).c_str());
+            //Current velocity, acceleration, max velocity, friction, and original max velocity
+ImGui::Text(std::string("VelocityX: " + std::to_string(VelocityX)).c_str());
+			ImGui::Text(std::string("VelocityY: " + std::to_string(VelocityY)).c_str());
+            ImGui::Text(std::string("Acceleration: " + std::to_string(Acceleration)).c_str());
+			ImGui::Text(std::string("Max Velocity: " + std::to_string(MaxVelocity)).c_str());
+            ImGui::Text(std::string("Friction: " + std::to_string(Friction)).c_str());
+			ImGui::Text(std::string("Original Max Velocity: " + std::to_string(OriginalMaxVelocity)).c_str());
             ImGui::Text(std::string("UserX: " + std::to_string((int64_t)UserX / SectorSize)).c_str());
             ImGui::Text(std::string("UserY: " + std::to_string((int64_t)UserY / SectorSize)).c_str());
             ImGui::Text("Sectors drawn: %d", SectorsDrawn);
@@ -501,5 +509,17 @@ void ProccessInput() {
 		VelocityX *= Friction;
 		VelocityY *= Friction;
 	}
+
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::LShift)) {
+        if (MaxVelocity <= 10000)
+            MaxVelocity += 2000 * time.asSeconds();
+    }
+    else {
+        //Slowly reseting max velocity to original max velocity
+        if (MaxVelocity > OriginalMaxVelocity)
+			MaxVelocity -= 1000 * time.asSeconds();
+		else
+			MaxVelocity = OriginalMaxVelocity;
+    }
 
 }
