@@ -223,8 +223,24 @@ int main() {
             ImGui::InputInt("Y", &y);
             if (ImGui::Button("Go to")) {
 				//setting user x and user y to x and y relative to sector size
-                UserX = x * SectorSize;
-                UserY = y * SectorSize;
+
+                // Calculate the range of sectors to render
+                int64_t startSectorX = static_cast<int64_t>(UserX / SectorSize);
+                int64_t startSectorY = static_cast<int64_t>(UserY / SectorSize);
+                int64_t endSectorX = startSectorX + view.getSize().x / SectorSize + 2; // +2 to cover partially visible sectors
+                int64_t endSectorY = startSectorY + view.getSize().y / SectorSize + 2;
+
+                //Getting the center sector
+                int64_t centerSectorX = endSectorX - view.getSize().x / SectorSize / 2;
+                int64_t centerSectorY = endSectorY - view.getSize().y / SectorSize / 2;
+
+                //Calculate how far away the center is from UserX and UserY, which is the top left of the sectors
+                int64_t distanceFromCenterX = centerSectorX - startSectorX;
+                int64_t distanceFromCenterY = centerSectorY - startSectorY;
+                
+                UserX = x * SectorSize - distanceFromCenterX * SectorSize + 1 * SectorSize;
+                UserY = y * SectorSize - distanceFromCenterY * SectorSize + 1 * SectorSize;
+                
 			}
 
             ImGui::End();
