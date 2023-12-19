@@ -12,8 +12,8 @@ double VelocityX                    = 0.0,
 VelocityY                           = 0.0;                  
 double MaxVelocity                  = 1000;               // Maximum velocity
 double OriginalMaxVelocity          = MaxVelocity;
-double Acceleration                 = 2000;               // Acceleration
-double Friction                     = 0.992;               // Damping factor
+double Acceleration                 = 8000;               // Acceleration
+double Friction                     = 0.98;               // Damping factor
 double OffsetX;                                           // Calculate the pixel offset within the current sector
 double OffsetY;                                           // Calculate the pixel offset within the current sector
 double StarSystemProbability        = 0.12;               // Probability of a star system appearing in a sector
@@ -112,6 +112,7 @@ int main() {
     //Setting user position
     UserX = randomLocation * SectorSize;
     UserY = randomLocation * SectorSize;
+    /*Intersting Location: 325160 , 325157 */
 
     while (window.isOpen()) {
         sf::Event event;
