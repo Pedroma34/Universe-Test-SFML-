@@ -10,6 +10,15 @@ Planet::Planet(int64_t l_seed) : Exists(false) {
 		return; // No planet
 
 	Exists = true;
+	Create();
+}
+
+Planet::Planet() {
+	Exists = true;
+	Create();
+}
+
+void Planet::Create() {
 	PlanetShape.setRadius(1.f);
 	PlanetShape.setFillColor(sf::Color::Green);
 	PlanetShape.setOrigin(PlanetShape.getGlobalBounds().width / 2, PlanetShape.getGlobalBounds().height / 2);

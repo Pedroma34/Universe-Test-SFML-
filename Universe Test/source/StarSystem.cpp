@@ -267,22 +267,21 @@ void StarSystem::GeneratePlanet(int64_t l_seed) {
     if (r > ChanceForMultiplePlanets)
 		return; // No more planets
 
-    //Random lambda that picks a number between 2 and 8 
     uint64_t maxNumberOfPlanets = 8;
-    uint64_t numbofPlanets = [&]() {
-		std::uniform_int_distribution<uint64_t> dist(1, maxNumberOfPlanets);
+    uint64_t numbofPlanets = [&]() { //Number of planets to generate
+		std::uniform_int_distribution<uint64_t> dist(1, maxNumberOfPlanets - 1); //It's -1 because we already generated one planet
 		return dist(rng);
 	}();
     
     for (uint64_t i = 0; i < numbofPlanets; ++i) {
+
+        //Just to be safe, clamping the number of planets to maxNumberOfPlanets
         if(Planets.size() >= maxNumberOfPlanets)
             return; // No more planets
-		auto planet = std::make_shared<Planet>(l_seed + i + 1);
-        if (!planet->Exists) {
-			planet.reset();
-			continue; // No planet
-		}
+
+		auto planet = std::make_shared<Planet>();
 		Planets.push_back(std::move(planet));
+
 	}
 
 }
