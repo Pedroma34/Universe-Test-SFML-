@@ -1,26 +1,34 @@
 #include "pch.h"
 #include "StarSystem.h"
+#include "Planet.h"
 
-StarSystem::StarSystem(int64_t l_x, int64_t l_y) : Color(StarColor::White), Size(StarSize::Medium), HasStar(false) {
+StarSystem::StarSystem(int64_t l_x, int64_t l_y) : Color(StarColor::White), 
+    Size(StarSize::Medium), HasStar(false), HasPlanet(false), ChanceForMultiplePlanets(0.9f)
+{
     
     std::mt19937_64& rng = *SharedData::GetRNG();
     const double& StarSystemProbability = SharedData::GetStarSystemProbability();
 
-    rng.seed(SharedData::Get().GenerateSeed(l_x, l_y));
+    uint64_t seed = SharedData::Get().GenerateSeed(l_x, l_y);
+    rng.seed(seed);
     std::uniform_real_distribution<double> dist(0.0, 1.0);
 
-    // x% chance of a star
     if (dist(rng) > StarSystemProbability)
         return; // No star
     HasStar = true;
 
     DetermineStarSize(rng);
     DetermineStarColor(rng);
+
+    
+    GeneratePlanet(seed);
+
 }
 
 void StarSystem::SetStarPositionInSector(int64_t l_row, int64_t l_column, int64_t l_startColumn, int64_t l_startRow) {
     //Variables
     auto& rng = *SharedData::GetRNG();
+    //rng.seed(SharedData::Get().GenerateSeed(l_row, l_column));
     const int64_t& sectorSize = SharedData::GetSectorSize();
     const auto& starGlobalBounds = StarShape.getGlobalBounds();
     const double& UserX = SharedData::GetUserX();
@@ -195,6 +203,46 @@ void StarSystem::DetermineStarColor(std::mt19937_64& l_rng) {
 		StarShape.setFillColor(colorProbability.second);
 
 		return;
+	}
+
+}
+
+void StarSystem::GeneratePlanet(int64_t l_seed) {
+
+    std::mt19937_64& rng = *SharedData::GetRNG();
+
+    //Generating single planet
+    auto planet = std::make_shared<Planet>(l_seed);
+    if (!planet->Exists) {
+        planet.reset();
+        return; // No planet
+    }
+
+    HasPlanet = true;
+    Planets.push_back(std::move(planet));
+
+    //Generating multiple planets
+    std::uniform_real_distribution<double> dist(0.0, 1.0);
+    auto r = dist(rng);
+    if (r > ChanceForMultiplePlanets)
+		return; // No more planets
+
+    //Random lambda that picks a number between 2 and 8 
+    uint64_t maxNumberOfPlanets = 8;
+    uint64_t numbofPlanets = [&]() {
+		std::uniform_int_distribution<uint64_t> dist(1, maxNumberOfPlanets);
+		return dist(rng);
+	}();
+    
+    for (uint64_t i = 0; i < numbofPlanets; ++i) {
+        if(Planets.size() >= maxNumberOfPlanets)
+            return; // No more planets
+		auto planet = std::make_shared<Planet>(l_seed + i + 1);
+        if (!planet->Exists) {
+			planet.reset();
+			continue; // No planet
+		}
+		Planets.push_back(std::move(planet));
 	}
 
 }

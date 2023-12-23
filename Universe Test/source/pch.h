@@ -85,6 +85,7 @@ public:
 	static void SetView(sf::View* l_view) {	Get().m_view = l_view;	}
 	static void SetUserX(double* l_userX) {	Get().m_userX = l_userX;	}
 	static void SetUserY(double* l_userY) {	Get().m_userY = l_userY;	}
+	static void SetStarPlanetProbability(float* l_starPlanetProbability) {	Get().m_starPlanetProbability = l_starPlanetProbability;	}
 
 	//Getters
 	static std::mt19937_64* GetRNG() {	return Get().m_rng;	}
@@ -95,6 +96,7 @@ public:
 	static sf::View& GetView() {	return *Get().m_view;	}
 	static double& GetUserX() {	return *Get().m_userX;	}
 	static double& GetUserY() {	return *Get().m_userY;	}
+	static float& GetStarPlanetProbability() {	return *Get().m_starPlanetProbability;	}
 
 private:
 	// Function to map int64_tegers to non-negative int64_tegers for Cantor pairing
@@ -105,6 +107,7 @@ private:
 private:
 	std::mt19937_64* m_rng = nullptr;
 	float* m_starSystemProbability = nullptr;
+	float* m_starPlanetProbability = nullptr;
 	const int64_t* m_sectorSize = nullptr;
 	sf::RenderWindow* m_window = nullptr;
 	sf::Time * m_time = nullptr;

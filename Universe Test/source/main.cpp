@@ -16,8 +16,9 @@ double Acceleration                 = 8000;               // Acceleration
 double Friction                     = 0.98;               // Damping factor
 double OffsetX;                                           // Calculate the pixel offset within the current sector
 double OffsetY;                                           // Calculate the pixel offset within the current sector
-float StarSystemProbability        = 0.12;               // Probability of a star system appearing in a sector
-int64_t SectorSize            = 125;	              // Sector size in pixels
+float StarSystemProbability        = 0.12;                // Probability of a star system appearing in a sector
+float StarPlanetProbability        = 0.60;                // Probability of a planet appearing in a star system
+int64_t SectorSize            = 125;	                  // Sector size in pixels
 bool Debug                          = false;              // Debug flag to draw sector shapes
 bool IsDragging                     = false;
 sf::Vector2i LastMousePos;
@@ -102,6 +103,7 @@ int main() {
     std::random_device rd;
     SharedData::SetRNG(&rng);
     SharedData::SetStarSystemProbability(&StarSystemProbability);
+    SharedData::SetStarPlanetProbability(&StarPlanetProbability);
 
     //Generating random location for user
     rng.seed(rd());
@@ -128,7 +130,6 @@ int main() {
 
                 if (event.key.code == sf::Keyboard::Space) {
                     //Generate a random uint64_t from 10000 to 500000
-                    rng.seed(rd());
 					randomLocation = dist(rng);
 					UserX = randomLocation * SectorSize;
 					UserY = randomLocation * SectorSize;
@@ -275,7 +276,7 @@ int main() {
                 
 			}
             ImGui::SliderFloat("Star System Probability", &StarSystemProbability, 0.0f, 1.0f, "%.2f", 1);
-            //A box that takes an int and sets it to the sector size. Size must be divisible by 5. It only sets when a button is pressed
+            ImGui::SliderFloat("Star Planet Probability", &StarPlanetProbability, 0.0f, 1.0f, "%.2f", 1);
             static int sectorSize = SectorSize;
             ImGui::InputInt("Sector Size", &sectorSize);
             if (ImGui::Button("Set Sector Size")) 
@@ -489,10 +490,10 @@ void DisplayStarSystemInfo(const StarSystem& l_starSystem) {
     sf::Vector2i sectorPositionOnScreen = (sf::Vector2i)SharedData::GetWindow()->mapCoordsToPixel(l_starSystem.StarSelectorShape.getPosition());
 	ImGui::SetWindowPos(ImVec2((sectorPositionOnScreen.x - l_starSystem.StarSelectorShape.getGlobalBounds().width) - windowSize.x / 2,
                                 sectorPositionOnScreen.y + l_starSystem.StarSelectorShape.getGlobalBounds().height));
-    //ImGui::SetWindowFontScale(2.f);
     ImGui::Text(std::string("Sector Coords: " + std::to_string(SectorCoordsOnMouse.x) + ", " + std::to_string(SectorCoordsOnMouse.y)).c_str());
     ImGui::Text(std::string("Star System Size: " + l_starSystem.GetStarSizeString()).c_str());
     ImGui::Text(std::string("Star System Color: " + l_starSystem.GetStarColorString()).c_str());
+    ImGui::Text(std::string("Planets in System: " + std::to_string(l_starSystem.Planets.size())).c_str());
 	ImGui::End();
 }
 
