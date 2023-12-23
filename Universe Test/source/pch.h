@@ -78,7 +78,7 @@ public:
 
 	//Setters
 	static void SetRNG(std::mt19937_64* l_rng) {	Get().m_rng = l_rng;	}
-	static void SetStarSystemProbability(double* l_starSystemProbability) {	Get().m_starSystemProbability = l_starSystemProbability;}
+	static void SetStarSystemProbability(float* l_starSystemProbability) {	Get().m_starSystemProbability = l_starSystemProbability;}
 	static void SetSectorSize(const int64_t* l_sectorSize) {	Get().m_sectorSize = l_sectorSize;	}
 	static void SetWindow(sf::RenderWindow* l_window) {	Get().m_window = l_window;	}
 	static void SetTime(sf::Time* l_time) {	Get().m_time = l_time;	}
@@ -88,7 +88,7 @@ public:
 
 	//Getters
 	static std::mt19937_64* GetRNG() {	return Get().m_rng;	}
-	const static double& GetStarSystemProbability() {	return *Get().m_starSystemProbability; }
+	const static float& GetStarSystemProbability() {	return *Get().m_starSystemProbability; }
 	const static int64_t& GetSectorSize() {	return *Get().m_sectorSize;	}
 	static sf::RenderWindow* GetWindow() {	return Get().m_window;	}
 	static sf::Time& GetTime() {	return *Get().m_time;	}
@@ -104,7 +104,7 @@ private:
 
 private:
 	std::mt19937_64* m_rng = nullptr;
-	double* m_starSystemProbability = nullptr;
+	float* m_starSystemProbability = nullptr;
 	const int64_t* m_sectorSize = nullptr;
 	sf::RenderWindow* m_window = nullptr;
 	sf::Time * m_time = nullptr;

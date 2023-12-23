@@ -16,8 +16,8 @@ double Acceleration                 = 8000;               // Acceleration
 double Friction                     = 0.98;               // Damping factor
 double OffsetX;                                           // Calculate the pixel offset within the current sector
 double OffsetY;                                           // Calculate the pixel offset within the current sector
-double StarSystemProbability        = 0.12;               // Probability of a star system appearing in a sector
-const int64_t SectorSize            = 125;	              // Sector size in pixels
+float StarSystemProbability        = 0.12;               // Probability of a star system appearing in a sector
+int64_t SectorSize            = 125;	              // Sector size in pixels
 bool Debug                          = false;              // Debug flag to draw sector shapes
 bool IsDragging                     = false;
 sf::Vector2i LastMousePos;
@@ -69,7 +69,7 @@ int main() {
     SharedData::SetUserX(&UserX);
     SharedData::SetUserY(&UserY);
 
-    sf::RenderWindow window(sf::VideoMode(WindowWidth, WindowHeight), "Infinite Universe", sf::Style::Default);
+    sf::RenderWindow window(sf::VideoMode(WindowWidth, WindowHeight), "Infinite Universe", sf::Style::Fullscreen);
     SharedData::SetWindow(&window);
     window.setVerticalSyncEnabled(true);
 
@@ -217,14 +217,22 @@ int main() {
 
         //test window
         if (Debug) {
-            ImGui::Begin("Test");
+            ImGui::Begin("Test", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
             ImGui::SetWindowPos(ImVec2(0, 0));
-            ImGui::SetWindowFontScale(2.0f);
+            ImGui::SetWindowSize(ImVec2(SharedData::GetWindow()->getSize().x * 0.30, SharedData::GetWindow()->getSize().y));
+            const auto& winSize = SharedData::GetWindow()->getSize();
+            if (winSize.x <= 1920)
+                ImGui::SetWindowFontScale(1.f);
+            else if (winSize.x > 1920 && winSize.x <= 2560)
+                ImGui::SetWindowFontScale(1.5f);
+            else if (winSize.x > 2560 && winSize.x <= 3840)
+                ImGui::SetWindowFontScale(2.f);
+            else if (winSize.x > 3840 && winSize.x <= 5120)
+                ImGui::SetWindowFontScale(2.5f);
             ImGui::Text(std::string("FPS: " + std::to_string(1.0f / time.asSeconds())).c_str());
             ImGui::Text(std::string("System Probability: " + std::to_string(StarSystemProbability * 100)).c_str());
             ImGui::Text(std::string("Stars visible: " + std::to_string(StarsVisible)).c_str());
-            //Current velocity, acceleration, max velocity, friction, and original max velocity
-ImGui::Text(std::string("VelocityX: " + std::to_string(VelocityX)).c_str());
+            ImGui::Text(std::string("VelocityX: " + std::to_string(VelocityX)).c_str());
 			ImGui::Text(std::string("VelocityY: " + std::to_string(VelocityY)).c_str());
             ImGui::Text(std::string("Acceleration: " + std::to_string(Acceleration)).c_str());
 			ImGui::Text(std::string("Max Velocity: " + std::to_string(MaxVelocity)).c_str());
@@ -266,7 +274,14 @@ ImGui::Text(std::string("VelocityX: " + std::to_string(VelocityX)).c_str());
                 UserY = y * SectorSize - distanceFromCenterY * SectorSize + 1 * SectorSize;
                 
 			}
-
+            ImGui::SliderFloat("Star System Probability", &StarSystemProbability, 0.0f, 1.0f, "%.2f", 1);
+            //A box that takes an int and sets it to the sector size. Size must be divisible by 5. It only sets when a button is pressed
+            static int sectorSize = SectorSize;
+            ImGui::InputInt("Sector Size", &sectorSize);
+            if (ImGui::Button("Set Sector Size")) 
+				if (sectorSize % 5 == 0)
+					SectorSize = sectorSize;
+            
             ImGui::End();
         }
         //end test window
@@ -460,12 +475,21 @@ void ProccessVelocityAndPosition() {
 void DisplayStarSystemInfo(const StarSystem& l_starSystem) {
     //Disabling resizing window
     ImGui::Begin("Star System Info", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
+    const auto &winSize = SharedData::GetWindow()->getSize();
+    if (winSize.x <= 1920)
+        ImGui::SetWindowFontScale(1.f);
+    else if(winSize.x > 1920 && winSize.x <= 2560)
+		ImGui::SetWindowFontScale(1.5f);
+	else if (winSize.x > 2560 && winSize.x <= 3840)
+		ImGui::SetWindowFontScale(2.f);
+	else if (winSize.x > 3840 && winSize.x <= 5120)
+		ImGui::SetWindowFontScale(2.5f);
     ImGui::SetWindowSize(ImVec2(SharedData::GetWindow()->getSize().x / 6, SharedData::GetWindow()->getSize().y / 8));
     sf::Vector2i windowSize = sf::Vector2i(ImGui::GetWindowSize().x, ImGui::GetWindowSize().y);
     sf::Vector2i sectorPositionOnScreen = (sf::Vector2i)SharedData::GetWindow()->mapCoordsToPixel(l_starSystem.StarSelectorShape.getPosition());
 	ImGui::SetWindowPos(ImVec2((sectorPositionOnScreen.x - l_starSystem.StarSelectorShape.getGlobalBounds().width) - windowSize.x / 2,
                                 sectorPositionOnScreen.y + l_starSystem.StarSelectorShape.getGlobalBounds().height));
-    ImGui::SetWindowFontScale(2.f);
+    //ImGui::SetWindowFontScale(2.f);
     ImGui::Text(std::string("Sector Coords: " + std::to_string(SectorCoordsOnMouse.x) + ", " + std::to_string(SectorCoordsOnMouse.y)).c_str());
     ImGui::Text(std::string("Star System Size: " + l_starSystem.GetStarSizeString()).c_str());
     ImGui::Text(std::string("Star System Color: " + l_starSystem.GetStarColorString()).c_str());
