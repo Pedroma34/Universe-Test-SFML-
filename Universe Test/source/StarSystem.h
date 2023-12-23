@@ -3,6 +3,7 @@
 
 enum class StarSize  { Small, Medium, Large, HyperLarge };
 enum class StarColor { Red, Orange, White, Blue, Purple };
+enum class StarPositionInSector { TopLeft, TopRight, BottomLeft, BottomRight, CenterTop, CenterLeft, CenterRight, Center };
 
 struct Planet;
 
@@ -16,6 +17,7 @@ struct StarSystem {
     sf::RectangleShape StarSelectorShape;
     StarSize Size;
     StarColor Color;
+    StarPositionInSector PositionInSector;
     sf::Vector2f Position;
     std::vector<std::shared_ptr<Planet>> Planets;
     bool HasStar;
@@ -28,5 +30,6 @@ struct StarSystem {
 private:
     void DetermineStarSize(std::mt19937_64& l_rng);
     void DetermineStarColor(std::mt19937_64& l_rng);
+    void DetermineStarPosition();
     void GeneratePlanet(int64_t l_seed);
 };

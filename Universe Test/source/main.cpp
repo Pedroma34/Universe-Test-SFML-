@@ -328,6 +328,21 @@ void DrawStarSystems(int64_t l_row, int64_t l_column, int64_t l_startRow, int64_
     StarSystems.push_back(std::make_unique<StarSystem>(starSystem));
 
     DrawQueue.push_back(std::make_unique<sf::CircleShape>(starSystem.StarShape));
+
+    //if(!Debug)
+	//	return;
+
+    //If Star has at least one planet, draw a circle around it
+    if(!starSystem.HasPlanet)
+        return;
+
+    sf::CircleShape circleShape(starGlobalBounds.width * 0.75);
+    circleShape.setOrigin(circleShape.getGlobalBounds().width / 2, circleShape.getGlobalBounds().height / 2);
+    circleShape.setFillColor(sf::Color::Transparent);
+    circleShape.setOutlineColor(sf::Color::White);
+    circleShape.setOutlineThickness(2);
+    circleShape.setPosition(starShape.getPosition().x, starShape.getPosition().y);
+    DrawQueue.push_back(std::make_unique<sf::CircleShape>(circleShape));
 }
 
 

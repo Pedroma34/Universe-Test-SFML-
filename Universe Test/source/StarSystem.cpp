@@ -3,7 +3,7 @@
 #include "Planet.h"
 
 StarSystem::StarSystem(int64_t l_x, int64_t l_y) : Color(StarColor::White), 
-    Size(StarSize::Medium), HasStar(false), HasPlanet(false), ChanceForMultiplePlanets(0.9f)
+    Size(StarSize::Medium), HasStar(false), HasPlanet(false), ChanceForMultiplePlanets(0.9f), PositionInSector(StarPositionInSector::Center)
 {
     
     std::mt19937_64& rng = *SharedData::GetRNG();
@@ -19,7 +19,7 @@ StarSystem::StarSystem(int64_t l_x, int64_t l_y) : Color(StarColor::White),
 
     DetermineStarSize(rng);
     DetermineStarColor(rng);
-
+    DetermineStarPosition();
     
     GeneratePlanet(seed);
 
@@ -27,8 +27,6 @@ StarSystem::StarSystem(int64_t l_x, int64_t l_y) : Color(StarColor::White),
 
 void StarSystem::SetStarPositionInSector(int64_t l_row, int64_t l_column, int64_t l_startColumn, int64_t l_startRow) {
     //Variables
-    auto& rng = *SharedData::GetRNG();
-    //rng.seed(SharedData::Get().GenerateSeed(l_row, l_column));
     const int64_t& sectorSize = SharedData::GetSectorSize();
     const auto& starGlobalBounds = StarShape.getGlobalBounds();
     const double& UserX = SharedData::GetUserX();
@@ -36,34 +34,37 @@ void StarSystem::SetStarPositionInSector(int64_t l_row, int64_t l_column, int64_
     double OffsetX = fmod(UserX, sectorSize);
     double OffsetY = fmod(UserY, sectorSize);
 
-    //Chance and position
-    std::vector<std::pair<double, sf::Vector2f>> positions{
-        /*Top Left     */ {0.125, sf::Vector2f((l_row - l_startRow) * sectorSize + starGlobalBounds.width - OffsetX, (l_column - l_startColumn) * sectorSize + starGlobalBounds.height - OffsetY)                           }, 
-        /*Top Right    */ {0.125, sf::Vector2f((l_row - l_startRow) * sectorSize + sectorSize - starGlobalBounds.width - OffsetX, (l_column - l_startColumn) * sectorSize + starGlobalBounds.height - OffsetY)              }, 
-        /*Bottom Left  */ {0.125, sf::Vector2f((l_row - l_startRow) * sectorSize + starGlobalBounds.width - OffsetX, (l_column - l_startColumn) * sectorSize + sectorSize - starGlobalBounds.height - OffsetY)              }, 
-        /*Bottom Right */ {0.125, sf::Vector2f((l_row - l_startRow) * sectorSize + sectorSize - starGlobalBounds.width - OffsetX, (l_column - l_startColumn) * sectorSize + sectorSize - starGlobalBounds.height - OffsetY) }, 
-        /*Center Top   */ {0.125, sf::Vector2f((l_row - l_startRow) * sectorSize + sectorSize / 2 - OffsetX, (l_column - l_startColumn) * sectorSize + starGlobalBounds.height - OffsetY)                                   }, 
-        /*Center Left  */ {0.125, sf::Vector2f((l_row - l_startRow) * sectorSize + starGlobalBounds.width + starGlobalBounds.width - OffsetX, (l_column - l_startColumn) * sectorSize + sectorSize / 2 - OffsetY)           }, 
-        /*Center Right */ {0.125, sf::Vector2f((l_row - l_startRow) * sectorSize + sectorSize - starGlobalBounds.width - OffsetX, (l_column - l_startColumn) * sectorSize + sectorSize / 2 - OffsetY)                       }, 
-        /*Center       */ {0.125, sf::Vector2f((l_row - l_startRow) * sectorSize + sectorSize / 2 - OffsetX, (l_column - l_startColumn) * sectorSize + sectorSize / 2 - OffsetY)                                            }, 
-	};
 
-    std::uniform_real_distribution<double> dist(0.0, 1.0);
-    double positionRoll = dist(rng);
-
-    double cumulativeProbability = 0.0;
-
-    for (auto& position : positions) {
-
-        cumulativeProbability += position.first;
-
-        if (positionRoll > cumulativeProbability)
-			continue;
-
-        StarShape.setPosition(position.second);
-        Position = position.second;
-        return;
+    switch (PositionInSector) {
+        case StarPositionInSector::TopLeft:
+			Position = sf::Vector2f((l_row - l_startRow) * sectorSize + starGlobalBounds.width - OffsetX, (l_column - l_startColumn) * sectorSize + starGlobalBounds.height - OffsetY);
+            break;
+        case StarPositionInSector::TopRight:
+            Position = sf::Vector2f((l_row - l_startRow) * sectorSize + sectorSize - starGlobalBounds.width - OffsetX, (l_column - l_startColumn) * sectorSize + starGlobalBounds.height - OffsetY);
+			break;
+            case StarPositionInSector::BottomLeft:
+			Position = sf::Vector2f((l_row - l_startRow) * sectorSize + starGlobalBounds.width - OffsetX, (l_column - l_startColumn) * sectorSize + sectorSize - starGlobalBounds.height - OffsetY);
+            break;
+		case StarPositionInSector::BottomRight:
+            Position = sf::Vector2f((l_row - l_startRow) * sectorSize + sectorSize - starGlobalBounds.width - OffsetX, (l_column - l_startColumn) * sectorSize + sectorSize - starGlobalBounds.height - OffsetY);
+            break;
+        case StarPositionInSector::CenterTop:
+            Position = sf::Vector2f((l_row - l_startRow) * sectorSize + sectorSize / 2 - OffsetX, (l_column - l_startColumn) * sectorSize + starGlobalBounds.height - OffsetY);
+            break;
+        case StarPositionInSector::CenterLeft:
+            Position = sf::Vector2f((l_row - l_startRow) * sectorSize + starGlobalBounds.width + starGlobalBounds.width - OffsetX, (l_column - l_startColumn) * sectorSize + sectorSize / 2 - OffsetY);
+            break;
+        case StarPositionInSector::CenterRight:
+	        Position = sf::Vector2f((l_row - l_startRow) * sectorSize + sectorSize - starGlobalBounds.width - OffsetX, (l_column - l_startColumn) * sectorSize + sectorSize / 2 - OffsetY);
+			break;
+		case StarPositionInSector::Center:
+			Position = sf::Vector2f((l_row - l_startRow) * sectorSize + sectorSize / 2 - OffsetX, (l_column - l_startColumn) * sectorSize + sectorSize / 2 - OffsetY);
+			break;
+        default:
+		    throw std::runtime_error("StarSystem::SetStarPositionInSector() - Invalid StarPositionInSector");
     }
+
+    StarShape.setPosition(Position);
 
 }
 
@@ -205,6 +206,45 @@ void StarSystem::DetermineStarColor(std::mt19937_64& l_rng) {
 		return;
 	}
 
+}
+
+void StarSystem::DetermineStarPosition() {
+    //Variables
+    auto& rng = *SharedData::GetRNG();
+    const int64_t& sectorSize = SharedData::GetSectorSize();
+    const auto& starGlobalBounds = StarShape.getGlobalBounds();
+    const double& UserX = SharedData::GetUserX();
+    const double& UserY = SharedData::GetUserY();
+    double OffsetX = fmod(UserX, sectorSize);
+    double OffsetY = fmod(UserY, sectorSize);
+
+    //Chance and position
+    std::vector<std::pair<double, StarPositionInSector>> positions { 
+        /*Top Left     */ {0.125, StarPositionInSector::TopLeft     },
+        /*Top Right    */ {0.125, StarPositionInSector::TopRight    },
+        /*Bottom Left  */ {0.125, StarPositionInSector::BottomLeft  },
+        /*Bottom Right */ {0.125, StarPositionInSector::BottomRight },
+        /*Center Top   */ {0.125, StarPositionInSector::CenterTop   },
+        /*Center Left  */ {0.125, StarPositionInSector::CenterLeft  },
+        /*Center Right */ {0.125, StarPositionInSector::CenterRight },
+        /*Center       */ {0.125, StarPositionInSector::Center      },
+    };
+
+    std::uniform_real_distribution<double> dist(0.0, 1.0);
+    double positionRoll = dist(rng);
+
+    double cumulativeProbability = 0.0;
+
+    for (auto& position : positions) {
+
+        cumulativeProbability += position.first;
+
+        if (positionRoll > cumulativeProbability)
+            continue;
+
+        PositionInSector = position.second;
+        return;
+    }
 }
 
 void StarSystem::GeneratePlanet(int64_t l_seed) {
