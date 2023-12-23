@@ -110,8 +110,8 @@ private:
 	float* m_starPlanetProbability = nullptr;
 	const int64_t* m_sectorSize = nullptr;
 	sf::RenderWindow* m_window = nullptr;
-	sf::Time * m_time = nullptr;
 	sf::View* m_view = nullptr;
+	sf::Time * m_time = nullptr;
 	double *m_userX = nullptr;
 	double *m_userY = nullptr;
 

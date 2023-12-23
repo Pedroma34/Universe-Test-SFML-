@@ -21,6 +21,7 @@ float StarPlanetProbability        = 0.60;                // Probability of a pl
 int64_t SectorSize            = 125;	                  // Sector size in pixels
 bool Debug                          = false;              // Debug flag to draw sector shapes
 bool IsDragging                     = false;
+bool ShowPlanets                    = false;
 sf::Vector2i LastMousePos;
 uint64_t SectorsDrawn               = 0;                  // Counter to track the number of sectors drawn
 sf::Vector2i SectorCoordsOnMouse    = sf::Vector2i(0,0);  // Sector coordinates of under the mouse cursor
@@ -64,6 +65,7 @@ bool DoesSectorHaveStarSystem(int64_t l_row, int64_t l_column, int64_t l_startCo
 
 bool IsMouseOnSector(int64_t l_row, int64_t l_column, int64_t l_startColumn, int64_t l_startRow);
 
+void DisplayUi();
 
 int main() {
     SharedData::SetSectorSize(&SectorSize);
@@ -82,6 +84,7 @@ int main() {
 
     //View
     sf::View view;
+    SharedData::SetView(&view);
     view.reset(sf::FloatRect(0, 0, ViewWidth, ViewHeight));
     int zoomLimit = 4; //How much it will be devided by when zooming in
     window.setView(view);
@@ -216,76 +219,8 @@ int main() {
         OffsetX = fmod(UserX, SectorSize);
         OffsetY = fmod(UserY, SectorSize);
 
-        //test window
-        if (Debug) {
-            ImGui::Begin("Test", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
-            ImGui::SetWindowPos(ImVec2(0, 0));
-            ImGui::SetWindowSize(ImVec2(SharedData::GetWindow()->getSize().x * 0.30, SharedData::GetWindow()->getSize().y));
-            const auto& winSize = SharedData::GetWindow()->getSize();
-            if (winSize.x <= 1920)
-                ImGui::SetWindowFontScale(1.f);
-            else if (winSize.x > 1920 && winSize.x <= 2560)
-                ImGui::SetWindowFontScale(1.5f);
-            else if (winSize.x > 2560 && winSize.x <= 3840)
-                ImGui::SetWindowFontScale(2.f);
-            else if (winSize.x > 3840 && winSize.x <= 5120)
-                ImGui::SetWindowFontScale(2.5f);
-            ImGui::Text(std::string("FPS: " + std::to_string(1.0f / time.asSeconds())).c_str());
-            ImGui::Text(std::string("System Probability: " + std::to_string(StarSystemProbability * 100)).c_str());
-            ImGui::Text(std::string("Stars visible: " + std::to_string(StarsVisible)).c_str());
-            ImGui::Text(std::string("VelocityX: " + std::to_string(VelocityX)).c_str());
-			ImGui::Text(std::string("VelocityY: " + std::to_string(VelocityY)).c_str());
-            ImGui::Text(std::string("Acceleration: " + std::to_string(Acceleration)).c_str());
-			ImGui::Text(std::string("Max Velocity: " + std::to_string(MaxVelocity)).c_str());
-            ImGui::Text(std::string("Friction: " + std::to_string(Friction)).c_str());
-			ImGui::Text(std::string("Original Max Velocity: " + std::to_string(OriginalMaxVelocity)).c_str());
-            ImGui::Text(std::string("UserX: " + std::to_string((int64_t)UserX / SectorSize)).c_str());
-            ImGui::Text(std::string("UserY: " + std::to_string((int64_t)UserY / SectorSize)).c_str());
-            ImGui::Text("Sectors drawn: %d", SectorsDrawn);
-            ImGui::Text(std::string("View size x: " + std::to_string(view.getSize().x)).c_str());
-            ImGui::Text(std::string("View size y: " + std::to_string(view.getSize().y)).c_str());
-            ImGui::Text(std::string("View center x: " + std::to_string(view.getCenter().x)).c_str());
-            ImGui::Text(std::string("View center y: " + std::to_string(view.getCenter().y)).c_str());
-            ImGui::Text(std::string("Sector coords on mouse x: " + std::to_string(SectorCoordsOnMouse.x)).c_str());
-            ImGui::Text(std::string("Sector coords on mouse y: " + std::to_string(SectorCoordsOnMouse.y)).c_str());
-            ImGui::Text("Debug: %d", Debug);
-            //I want to be able to input the coords I want to go to, and then press a button to go there
-            static int x = 0;
-            static int y = 0;
-            ImGui::InputInt("X", &x);
-            ImGui::InputInt("Y", &y);
-            if (ImGui::Button("Go to")) {
-				//setting user x and user y to x and y relative to sector size
-
-                // Calculate the range of sectors to render
-                int64_t startSectorX = static_cast<int64_t>(UserX / SectorSize);
-                int64_t startSectorY = static_cast<int64_t>(UserY / SectorSize);
-                int64_t endSectorX = startSectorX + view.getSize().x / SectorSize + 2; // +2 to cover partially visible sectors
-                int64_t endSectorY = startSectorY + view.getSize().y / SectorSize + 2;
-
-                //Getting the center sector
-                int64_t centerSectorX = endSectorX - view.getSize().x / SectorSize / 2;
-                int64_t centerSectorY = endSectorY - view.getSize().y / SectorSize / 2;
-
-                //Calculate how far away the center is from UserX and UserY, which is the top left of the sectors
-                int64_t distanceFromCenterX = centerSectorX - startSectorX;
-                int64_t distanceFromCenterY = centerSectorY - startSectorY;
-                
-                UserX = x * SectorSize - distanceFromCenterX * SectorSize + 1 * SectorSize;
-                UserY = y * SectorSize - distanceFromCenterY * SectorSize + 1 * SectorSize;
-                
-			}
-            ImGui::SliderFloat("Star System Probability", &StarSystemProbability, 0.0f, 1.0f, "%.2f", 1);
-            ImGui::SliderFloat("Star Planet Probability", &StarPlanetProbability, 0.0f, 1.0f, "%.2f", 1);
-            static int sectorSize = SectorSize;
-            ImGui::InputInt("Sector Size", &sectorSize);
-            if (ImGui::Button("Set Sector Size")) 
-				if (sectorSize % 5 == 0)
-					SectorSize = sectorSize;
-            
-            ImGui::End();
-        }
-        //end test window
+        //Ui
+        DisplayUi();
 
         ProccessVisibleUniverse();
         //End Update//
@@ -331,7 +266,7 @@ void DrawStarSystems(int64_t l_row, int64_t l_column, int64_t l_startRow, int64_
 
 
     //Drawing planet rings around the star
-    if(!starSystem.HasPlanet)
+    if(!starSystem.HasPlanet || !ShowPlanets)
         return;
 
     const int64_t numbOfPlanets = (int64_t)starSystem.Planets.size();
@@ -530,6 +465,99 @@ bool IsMouseOnSector(int64_t l_row, int64_t l_column, int64_t l_startColumn, int
     return false;
 }
 
+void DisplayUi() {
+    
+    sf::Time& time = SharedData::GetTime();
+    sf::View& view = SharedData::GetView();
+
+    //Show planet rings
+    ImGui::Begin("Menu", NULL, ImGuiWindowFlags_NoResize);
+    const auto& winSize = SharedData::GetWindow()->getSize();
+    if (winSize.x <= 1920)
+        ImGui::SetWindowFontScale(1.f);
+    else if (winSize.x > 1920 && winSize.x <= 2560)
+        ImGui::SetWindowFontScale(1.5f);
+    else if (winSize.x > 2560 && winSize.x <= 3840)
+        ImGui::SetWindowFontScale(2.f);
+    else if (winSize.x > 3840 && winSize.x <= 5120)
+        ImGui::SetWindowFontScale(2.5f);
+    ImGui::SetWindowSize(ImVec2(SharedData::GetWindow()->getSize().x * 0.20, SharedData::GetWindow()->getSize().y * 0.10));
+    ImGui::SetWindowPos(ImVec2(SharedData::GetWindow()->getSize().x - ImGui::GetWindowSize().x, 0));
+    ImGui::Checkbox("Show Planet Orbit on Stars", &ShowPlanets);
+    ImGui::Checkbox("Activate Debug Mode (or TAB to enable)", &Debug);
+    ImGui::End();
+
+    //Debugging
+    if (Debug) {
+        ImGui::Begin("Test", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
+        ImGui::SetWindowPos(ImVec2(0, 0));
+        ImGui::SetWindowSize(ImVec2(SharedData::GetWindow()->getSize().x * 0.30, SharedData::GetWindow()->getSize().y));
+        const auto& winSize = SharedData::GetWindow()->getSize();
+        if (winSize.x <= 1920)
+            ImGui::SetWindowFontScale(1.f);
+        else if (winSize.x > 1920 && winSize.x <= 2560)
+            ImGui::SetWindowFontScale(1.5f);
+        else if (winSize.x > 2560 && winSize.x <= 3840)
+            ImGui::SetWindowFontScale(2.f);
+        else if (winSize.x > 3840 && winSize.x <= 5120)
+            ImGui::SetWindowFontScale(2.5f);
+        ImGui::Text(std::string("FPS: " + std::to_string(1.0f / time.asSeconds())).c_str());
+        ImGui::Text(std::string("System Probability: " + std::to_string(StarSystemProbability * 100)).c_str());
+        ImGui::Text(std::string("Stars visible: " + std::to_string(StarsVisible)).c_str());
+        ImGui::Text(std::string("VelocityX: " + std::to_string(VelocityX)).c_str());
+        ImGui::Text(std::string("VelocityY: " + std::to_string(VelocityY)).c_str());
+        ImGui::Text(std::string("Acceleration: " + std::to_string(Acceleration)).c_str());
+        ImGui::Text(std::string("Max Velocity: " + std::to_string(MaxVelocity)).c_str());
+        ImGui::Text(std::string("Friction: " + std::to_string(Friction)).c_str());
+        ImGui::Text(std::string("Original Max Velocity: " + std::to_string(OriginalMaxVelocity)).c_str());
+        ImGui::Text(std::string("UserX: " + std::to_string((int64_t)UserX / SectorSize)).c_str());
+        ImGui::Text(std::string("UserY: " + std::to_string((int64_t)UserY / SectorSize)).c_str());
+        ImGui::Text("Sectors drawn: %d", SectorsDrawn);
+        ImGui::Text(std::string("View size x: " + std::to_string(view.getSize().x)).c_str());
+        ImGui::Text(std::string("View size y: " + std::to_string(view.getSize().y)).c_str());
+        ImGui::Text(std::string("View center x: " + std::to_string(view.getCenter().x)).c_str());
+        ImGui::Text(std::string("View center y: " + std::to_string(view.getCenter().y)).c_str());
+        ImGui::Text(std::string("Sector coords on mouse x: " + std::to_string(SectorCoordsOnMouse.x)).c_str());
+        ImGui::Text(std::string("Sector coords on mouse y: " + std::to_string(SectorCoordsOnMouse.y)).c_str());
+        ImGui::Text("Debug: %d", Debug);
+        //I want to be able to input the coords I want to go to, and then press a button to go there
+        static int x = 0;
+        static int y = 0;
+        ImGui::InputInt("X", &x);
+        ImGui::InputInt("Y", &y);
+        if (ImGui::Button("Go to")) {
+            //setting user x and user y to x and y relative to sector size
+
+            // Calculate the range of sectors to render
+            int64_t startSectorX = static_cast<int64_t>(UserX / SectorSize);
+            int64_t startSectorY = static_cast<int64_t>(UserY / SectorSize);
+            int64_t endSectorX = startSectorX + view.getSize().x / SectorSize + 2; // +2 to cover partially visible sectors
+            int64_t endSectorY = startSectorY + view.getSize().y / SectorSize + 2;
+
+            //Getting the center sector
+            int64_t centerSectorX = endSectorX - view.getSize().x / SectorSize / 2;
+            int64_t centerSectorY = endSectorY - view.getSize().y / SectorSize / 2;
+
+            //Calculate how far away the center is from UserX and UserY, which is the top left of the sectors
+            int64_t distanceFromCenterX = centerSectorX - startSectorX;
+            int64_t distanceFromCenterY = centerSectorY - startSectorY;
+
+            UserX = x * SectorSize - distanceFromCenterX * SectorSize + 1 * SectorSize;
+            UserY = y * SectorSize - distanceFromCenterY * SectorSize + 1 * SectorSize;
+
+        }
+        ImGui::SliderFloat("Star System Probability", &StarSystemProbability, 0.0f, 1.0f, "%.2f", 1);
+        ImGui::SliderFloat("Star Planet Probability", &StarPlanetProbability, 0.0f, 1.0f, "%.2f", 1);
+        static int sectorSize = SectorSize;
+        ImGui::InputInt("Sector Size", &sectorSize);
+        if (ImGui::Button("Set Sector Size"))
+            if (sectorSize % 5 == 0)
+                SectorSize = sectorSize;
+
+        ImGui::End();
+    }
+}
+
 
 void ProccessInput() {
     sf::Time& time = SharedData::GetTime();
@@ -560,7 +588,7 @@ void ProccessInput() {
     else {
         //Slowly reseting max velocity to original max velocity
         if (MaxVelocity > OriginalMaxVelocity)
-			MaxVelocity -= 1000 * time.asSeconds();
+			MaxVelocity -= 7000 * time.asSeconds();
 		else
 			MaxVelocity = OriginalMaxVelocity;
     }
