@@ -70,7 +70,7 @@ int main() {
     SharedData::SetUserX(&UserX);
     SharedData::SetUserY(&UserY);
 
-    sf::RenderWindow window(sf::VideoMode(WindowWidth, WindowHeight), "Infinite Universe", sf::Style::Fullscreen);
+    sf::RenderWindow window(sf::VideoMode(WindowWidth, WindowHeight), "Infinite Universe"/*, sf::Style::Fullscreen*/);
     SharedData::SetWindow(&window);
     window.setVerticalSyncEnabled(true);
 
@@ -329,20 +329,22 @@ void DrawStarSystems(int64_t l_row, int64_t l_column, int64_t l_startRow, int64_
 
     DrawQueue.push_back(std::make_unique<sf::CircleShape>(starSystem.StarShape));
 
-    //if(!Debug)
-	//	return;
 
-    //If Star has at least one planet, draw a circle around it
+    //Drawing planet rings around the star
     if(!starSystem.HasPlanet)
         return;
 
-    sf::CircleShape circleShape(starGlobalBounds.width * 0.75);
-    circleShape.setOrigin(circleShape.getGlobalBounds().width / 2, circleShape.getGlobalBounds().height / 2);
-    circleShape.setFillColor(sf::Color::Transparent);
-    circleShape.setOutlineColor(sf::Color::White);
-    circleShape.setOutlineThickness(2);
-    circleShape.setPosition(starShape.getPosition().x, starShape.getPosition().y);
-    DrawQueue.push_back(std::make_unique<sf::CircleShape>(circleShape));
+    const int64_t numbOfPlanets = (int64_t)starSystem.Planets.size();
+
+    for (int64_t i = 0; i < numbOfPlanets; i++) {
+        sf::CircleShape circleShape((starSystem.ShapeRadius * 1.5) + (i * 5));
+        circleShape.setOrigin(circleShape.getGlobalBounds().width / 2, circleShape.getGlobalBounds().height / 2);
+        circleShape.setFillColor(sf::Color::Transparent);
+        circleShape.setOutlineColor(sf::Color::White);
+        circleShape.setOutlineThickness(1.f);
+        circleShape.setPosition(starShape.getPosition().x, starShape.getPosition().y);
+        DrawQueue.push_back(std::make_unique<sf::CircleShape>(circleShape));
+    }
 }
 
 

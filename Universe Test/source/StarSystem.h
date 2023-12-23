@@ -16,6 +16,7 @@ struct StarSystem {
     sf::CircleShape StarShape;
     sf::RectangleShape StarSelectorShape;
     StarSize Size;
+    float ShapeRadius;
     StarColor Color;
     StarPositionInSector PositionInSector;
     sf::Vector2f Position;

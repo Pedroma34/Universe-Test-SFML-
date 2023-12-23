@@ -2,8 +2,10 @@
 #include "StarSystem.h"
 #include "Planet.h"
 
-StarSystem::StarSystem(int64_t l_x, int64_t l_y) : Color(StarColor::White), 
-    Size(StarSize::Medium), HasStar(false), HasPlanet(false), ChanceForMultiplePlanets(0.9f), PositionInSector(StarPositionInSector::Center)
+StarSystem::StarSystem(int64_t l_x, int64_t l_y) : Color(StarColor::White),
+Size(StarSize::Medium), HasStar(false), HasPlanet(false),
+ChanceForMultiplePlanets(0.9f), PositionInSector(StarPositionInSector::Center),
+ShapeRadius(0.f)
 {
     
     std::mt19937_64& rng = *SharedData::GetRNG();
@@ -149,6 +151,7 @@ void StarSystem::DetermineStarSize(std::mt19937_64& l_rng) {
             throw std::runtime_error("StarSystem::DetermineStarSize() - Invalid StarSize");
 
 		StarShape.setRadius(sizeProbability.second);
+        ShapeRadius = sizeProbability.second;
 		//Setting origin to middle
 		StarShape.setOrigin(StarShape.getGlobalBounds().width / 2, StarShape.getGlobalBounds().height / 2);
 
