@@ -266,25 +266,39 @@ void StarSystem::GeneratePlanet(int64_t l_seed) {
 
     //Generating multiple planets
     std::uniform_real_distribution<double> dist(0.0, 1.0);
-    auto r = dist(rng);
-    if (r > ChanceForMultiplePlanets)
+    if (dist(rng) > ChanceForMultiplePlanets)
 		return; // No more planets
 
-    uint64_t maxNumberOfPlanets = 8;
-    uint64_t numbofPlanets = [&]() { //Number of planets to generate
-		std::uniform_int_distribution<uint64_t> dist(1, maxNumberOfPlanets - 1); //It's -1 because we already generated one planet
-		return dist(rng);
-	}();
-    
-    for (uint64_t i = 0; i < numbofPlanets; ++i) {
+    uint64_t planetCap = 8; // Max planets in a system
+    //Planets to add. One planet is already added.
+    std::vector<std::pair<double, uint64_t>> planetProbabilities = {
+		{0.60,   1},  //60%
+		{0.20,   2},  //20%
+		{0.10,   3},  //10%
+		{0.05,   4},  //5%
+		{0.03,   5},  //3%
+		{0.015,  6},  //1.5%
+		{0.005,  7}   //0.5%
+	};
 
-        //Just to be safe, clamping the number of planets to maxNumberOfPlanets
-        if(Planets.size() >= maxNumberOfPlanets)
-            return; // No more planets
+    uint64_t numOfPlanets        = 0;
+	double cumulativeProbability = 0.0;
 
-		auto planet = std::make_shared<Planet>();
-		Planets.push_back(std::move(planet));
+    for (auto& planetProbability : planetProbabilities) {
 
+		cumulativeProbability += planetProbability.first;
+
+		if (dist(rng) > cumulativeProbability)
+			continue;
+
+        numOfPlanets = planetProbability.second;
+		break;
 	}
 
+    for (uint64_t i = 0; i < numOfPlanets; ++i) {
+        if(Planets.size() >= planetCap)
+			return; // Max planets reached
+		auto planet = std::make_shared<Planet>();
+		Planets.push_back(std::move(planet));
+	}
 }
