@@ -4,7 +4,7 @@
 
 StarSystem::StarSystem(int64_t l_x, int64_t l_y) : Color(StarColor::White),
 Size(StarSize::Medium), ID(0), HasStar(false), HasPlanet(false),
-ChanceForMultiplePlanets(0.9f), PositionInSector(StarPositionInSector::Center),
+ChanceForMultiplePlanets(0.8f), PositionInSector(StarPositionInSector::Center),
 ShapeRadius(0.f)
 {
     
@@ -272,13 +272,13 @@ void StarSystem::GeneratePlanet(int64_t l_seed) {
     uint64_t planetCap = 8; // Max planets in a system
     //Planets to add. One planet is already added.
     std::vector<std::pair<double, uint64_t>> planetProbabilities = {
-		{0.60,   1},  //60%
+		{0.20,   1},  //20%
 		{0.20,   2},  //20%
-		{0.10,   3},  //10%
-		{0.05,   4},  //5%
-		{0.03,   5},  //3%
-		{0.015,  6},  //1.5%
-		{0.005,  7}   //0.5%
+		{0.20,   3},  //20%
+		{0.20,   4},  //20%
+		{0.15,   5},  //15%
+		{0.035,  6},  //3.5%
+		{0.015,  7}   //1.5%
 	};
 
     uint64_t numOfPlanets        = 0;
