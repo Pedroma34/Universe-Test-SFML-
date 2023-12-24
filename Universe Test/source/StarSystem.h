@@ -21,6 +21,7 @@ struct StarSystem {
     StarPositionInSector PositionInSector;
     sf::Vector2f Position;
     std::vector<std::shared_ptr<Planet>> Planets;
+    uint64_t ID;
     bool HasStar;
     bool HasPlanet;
     float ChanceForMultiplePlanets;

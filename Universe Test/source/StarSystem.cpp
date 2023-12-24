@@ -3,7 +3,7 @@
 #include "Planet.h"
 
 StarSystem::StarSystem(int64_t l_x, int64_t l_y) : Color(StarColor::White),
-Size(StarSize::Medium), HasStar(false), HasPlanet(false),
+Size(StarSize::Medium), ID(0), HasStar(false), HasPlanet(false),
 ChanceForMultiplePlanets(0.9f), PositionInSector(StarPositionInSector::Center),
 ShapeRadius(0.f)
 {
@@ -11,8 +11,8 @@ ShapeRadius(0.f)
     std::mt19937_64& rng = *SharedData::GetRNG();
     const double& StarSystemProbability = SharedData::GetStarSystemProbability();
 
-    uint64_t seed = SharedData::Get().GenerateSeed(l_x, l_y);
-    rng.seed(seed);
+    ID = SharedData::Get().GenerateSeed(l_x, l_y);
+    rng.seed(ID);
     std::uniform_real_distribution<double> dist(0.0, 1.0);
 
     if (dist(rng) > StarSystemProbability)
@@ -23,7 +23,7 @@ ShapeRadius(0.f)
     DetermineStarColor(rng);
     DetermineStarPosition();
     
-    GeneratePlanet(seed);
+    GeneratePlanet(ID);
 
 }
 

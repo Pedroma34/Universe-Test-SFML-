@@ -443,6 +443,8 @@ void DisplayStarSystemInfo(const StarSystem& l_starSystem) {
 	ImGui::SetWindowPos(ImVec2((sectorPositionOnScreen.x - l_starSystem.StarSelectorShape.getGlobalBounds().width) - windowSize.x / 2,
                                 sectorPositionOnScreen.y + l_starSystem.StarSelectorShape.getGlobalBounds().height));
     ImGui::Text(std::string("Sector Coords: " + std::to_string(SectorCoordsOnMouse.x) + ", " + std::to_string(SectorCoordsOnMouse.y)).c_str());
+    if (Debug)
+        ImGui::Text(std::string("Star System ID: " + std::to_string(l_starSystem.ID)).c_str());
     ImGui::Text(std::string("Star System Size: " + l_starSystem.GetStarSizeString()).c_str());
     ImGui::Text(std::string("Star System Color: " + l_starSystem.GetStarColorString()).c_str());
     ImGui::Text(std::string("Planets in System: " + std::to_string(l_starSystem.Planets.size())).c_str());
