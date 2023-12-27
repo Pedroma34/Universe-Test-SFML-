@@ -214,12 +214,6 @@ void StarSystem::DetermineStarColor(std::mt19937_64& l_rng) {
 void StarSystem::DetermineStarPosition() {
     //Variables
     auto& rng = *SharedData::GetRNG();
-    const int64_t& sectorSize = SharedData::GetSectorSize();
-    const auto& starGlobalBounds = StarShape.getGlobalBounds();
-    const double& UserX = SharedData::GetUserX();
-    const double& UserY = SharedData::GetUserY();
-    double OffsetX = fmod(UserX, sectorSize);
-    double OffsetY = fmod(UserY, sectorSize);
 
     //Chance and position
     std::vector<std::pair<double, StarPositionInSector>> positions { 
