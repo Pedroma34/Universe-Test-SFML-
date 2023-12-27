@@ -252,38 +252,37 @@ void StarSystem::DetermineStarPosition() {
 
 void StarSystem::GeneratePlanet(int64_t l_seed) {
 
+    //Variables
     std::mt19937_64& rng = *SharedData::GetRNG();
 
     //Generating single planet
     auto planet = std::make_shared<Planet>(l_seed);
-    if (!planet->Exists) {
-        planet.reset();
+    if (!planet->Exists)
         return; // No planet
-    }
+    
 
     HasPlanet = true;
     Planets.push_back(std::move(planet));
 
     //Generating multiple planets
     std::uniform_real_distribution<double> dist(0.0, 1.0);
-    if (dist(rng) > ChanceForMultiplePlanets)
-		return; // No more planets
 
-    uint64_t planetCap = 8; // Max planets in a system
-    //Planets to add. One planet is already added.
+    //Planets to add
     std::vector<std::pair<double, uint64_t>> planetProbabilities = {
-		{0.20,   1},  //20%
-		{0.20,   2},  //20%
-		{0.20,   3},  //20%
-		{0.20,   4},  //20%
-		{0.15,   5},  //15%
-		{0.035,  6},  //3.5%
-		{0.015,  7}   //1.5%
+		{0.125,   1},  //12.5%, just one planet, which is the one that we already added
+		{0.125,   2},  //12.5%
+		{0.125,   3},  //12.5%
+		{0.125,   4},  //12.5%
+		{0.125,   5},  //12.5%
+		{0.125,   6},  //12.5%
+		{0.125,   7},  //12.5%,
+		{0.125,   8}   //12.5%, maximum ammount of planets
 	};
 
     uint64_t numOfPlanets        = 0;
 	double cumulativeProbability = 0.0;
 
+    //Processing how many planets to add
     for (auto& planetProbability : planetProbabilities) {
 
 		cumulativeProbability += planetProbability.first;
@@ -295,10 +294,17 @@ void StarSystem::GeneratePlanet(int64_t l_seed) {
 		break;
 	}
 
+    //Adding planets
     for (uint64_t i = 0; i < numOfPlanets; ++i) {
-        if(Planets.size() >= planetCap)
-			return; // Max planets reached
-		auto planet = std::make_shared<Planet>();
+        
+        if(numOfPlanets == 1) // If there is only one planet, we already added it, so we skip this iteration
+			continue;
+
+        if (i == 0 && numOfPlanets > 1) // If this is the first planet and there are more planets to add, skip this first iteration.  
+            continue;
+
+        auto planet = std::make_shared<Planet>();
 		Planets.push_back(std::move(planet));
-	}
+	
+    }
 }
