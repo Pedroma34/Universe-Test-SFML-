@@ -1,96 +1,102 @@
 #include "pch.h"
 #include "StarSystem.h"
-#include "Planet.h"
+#include "Universe.h"
 
-StarSystem::StarSystem(int64_t l_x, int64_t l_y) : Color(StarColor::White),
-Size(StarSize::Medium), ID(0), HasStar(false), HasPlanet(false),
-ChanceForMultiplePlanets(0.8f), PositionInSector(StarPositionInSector::Center),
-ShapeRadius(0.f)
+uvy::StarSystem::StarSystem(const int64_t& l_x, const int64_t& l_y) :
+m_starSize(StarSize::Small), m_starColor(StarColor::Orange),
+m_starPositionInSector(StarPositionInSector::Center),
+m_id(0), m_starRadius(1.f), m_hasStar(false)
 {
-    
-    std::mt19937_64& rng = *SharedData::GetRNG();
-    const double& StarSystemProbability = SharedData::GetStarSystemProbability();
 
-    ID = SharedData::Get().GenerateSeed(l_x, l_y);
-    rng.seed(ID);
-    std::uniform_real_distribution<double> dist(0.0, 1.0);
+	GenerateSeed(l_x, l_y);
 
-    if (dist(rng) > StarSystemProbability)
-        return; // No star
-    HasStar = true;
+	if(!GenerateStar())
+		return;	//Star doesn't exist. m_hasStar is false by default.
 
-    DetermineStarSize(rng);
-    DetermineStarColor(rng);
-    DetermineStarPosition();
-    
-    GeneratePlanet(ID);
-
+	DetermineStarColor();
+	DetermineStarSize();
+	DetermineStarPosition();
 }
 
-void StarSystem::SetStarPositionInSector(int64_t l_row, int64_t l_column, int64_t l_startColumn, int64_t l_startRow) {
-    //Variables
-    const int64_t& sectorSize = SharedData::GetSectorSize();
-    const auto& starGlobalBounds = StarShape.getGlobalBounds();
-    const double& UserX = SharedData::GetUserX();
-    const double& UserY = SharedData::GetUserY();
-    double OffsetX = fmod(UserX, sectorSize);
-    double OffsetY = fmod(UserY, sectorSize);
+uvy::StarSystem::~StarSystem() {}
 
+void uvy::StarSystem::SetStarPositionInSector(const int64_t& l_x, const int64_t& l_y) {
 
-    switch (PositionInSector) {
-        case StarPositionInSector::TopLeft:
-			Position = sf::Vector2f((l_row - l_startRow) * sectorSize + starGlobalBounds.width - OffsetX, (l_column - l_startColumn) * sectorSize + starGlobalBounds.height - OffsetY);
-            break;
-        case StarPositionInSector::TopRight:
-            Position = sf::Vector2f((l_row - l_startRow) * sectorSize + sectorSize - starGlobalBounds.width - OffsetX, (l_column - l_startColumn) * sectorSize + starGlobalBounds.height - OffsetY);
-			break;
-            case StarPositionInSector::BottomLeft:
-			Position = sf::Vector2f((l_row - l_startRow) * sectorSize + starGlobalBounds.width - OffsetX, (l_column - l_startColumn) * sectorSize + sectorSize - starGlobalBounds.height - OffsetY);
-            break;
-		case StarPositionInSector::BottomRight:
-            Position = sf::Vector2f((l_row - l_startRow) * sectorSize + sectorSize - starGlobalBounds.width - OffsetX, (l_column - l_startColumn) * sectorSize + sectorSize - starGlobalBounds.height - OffsetY);
-            break;
-        case StarPositionInSector::CenterTop:
-            Position = sf::Vector2f((l_row - l_startRow) * sectorSize + sectorSize / 2 - OffsetX, (l_column - l_startColumn) * sectorSize + starGlobalBounds.height - OffsetY);
-            break;
-        case StarPositionInSector::CenterLeft:
-            Position = sf::Vector2f((l_row - l_startRow) * sectorSize + starGlobalBounds.width + starGlobalBounds.width - OffsetX, (l_column - l_startColumn) * sectorSize + sectorSize / 2 - OffsetY);
-            break;
-        case StarPositionInSector::CenterRight:
-	        Position = sf::Vector2f((l_row - l_startRow) * sectorSize + sectorSize - starGlobalBounds.width - OffsetX, (l_column - l_startColumn) * sectorSize + sectorSize / 2 - OffsetY);
-			break;
+	const sf::Vector2<int64_t>& sectorSize = SharedData::GetUniverse().GetSectorSize();
+	sf::Vector2f position;
+
+	switch (m_starPositionInSector) {
 		case StarPositionInSector::Center:
-			Position = sf::Vector2f((l_row - l_startRow) * sectorSize + sectorSize / 2 - OffsetX, (l_column - l_startColumn) * sectorSize + sectorSize / 2 - OffsetY);
+			position = sf::Vector2f(l_x * sectorSize.x + sectorSize.x * 0.50f, l_y * sectorSize.y + sectorSize.y * 0.50f);
 			break;
-        default:
-		    throw std::runtime_error("StarSystem::SetStarPositionInSector() - Invalid StarPositionInSector");
-    }
+		case StarPositionInSector::CenterLeft:
+			position = sf::Vector2f(l_x * sectorSize.x + sectorSize.x * 0.15f, l_y * sectorSize.y + sectorSize.y * 0.50f);
+			break;
+		case StarPositionInSector::CenterRight:
+			position = sf::Vector2f(l_x * sectorSize.x + sectorSize.x * 0.85f, l_y * sectorSize.y + sectorSize.y * 0.50f);
+			break;
+		case StarPositionInSector::CenterTop:
+			position = sf::Vector2f(l_x * sectorSize.x + sectorSize.x * 0.50f, l_y * sectorSize.y + sectorSize.y * 0.15f);
+			break;
+		case StarPositionInSector::TopLeft:
+			position = sf::Vector2f(l_x * sectorSize.x + sectorSize.x * 0.15f, l_y * sectorSize.y + sectorSize.y * 0.15f);
+			break;
+		case StarPositionInSector::TopRight:
+			position = sf::Vector2f(l_x * sectorSize.x + sectorSize.x * 0.90f, l_y * sectorSize.y + sectorSize.y * 0.15f);
+			break;
+		case StarPositionInSector::BottomLeft:
+			position = sf::Vector2f(l_x * sectorSize.x + sectorSize.x * 0.15f, l_y * sectorSize.y + sectorSize.y * 0.85f);
+			break;
+		case StarPositionInSector::BottomRight:
+			position = sf::Vector2f(l_x * sectorSize.x + sectorSize.x * 0.90f, l_y * sectorSize.y + sectorSize.y * 0.85f);
+			break;
+		default:
+			throw std::runtime_error("StarSystem::SetStarPositionInSector() - Invalid StarPositionInSector");
+	}
 
-    StarShape.setPosition(Position);
+	m_starShape.setPosition(position);
 
 }
 
-std::string StarSystem::GetStarSizeString() const {
-    switch (Size) {
+sf::CircleShape& uvy::StarSystem::GetStarShape() {
+	return m_starShape;
+}
+
+sf::RectangleShape& uvy::StarSystem::GetStarSelector() {
+	return m_starSelector;
+}
+
+const StarSize& uvy::StarSystem::GetStarSize() const {
+	return m_starSize;
+}
+
+std::string uvy::StarSystem::GetStarSizeString() const {
+
+	switch (m_starSize) {
 	case StarSize::Small:
-        return "Small";
-        break;
-    case StarSize::Medium:
-        return "Medium";
-        break;
-    case StarSize::Large:
-        return "Large";
-        break;
-    case StarSize::HyperLarge:
-        return "Hyper Large";
-        break;
+		return "Small";
+		break;
+	case StarSize::Medium:
+		return "Medium";
+		break;
+	case StarSize::Large:
+		return "Large";
+		break;
+	case StarSize::HyperLarge:
+		return "Hyper Large";
+		break;
 	default:
 		throw std::runtime_error("StarSystem::GetStarSizeString() - Invalid StarSize");
 	}
+
 }
 
-std::string StarSystem::GetStarColorString() const {
-    switch (Color) {
+const StarColor& uvy::StarSystem::GetStarColor() const {
+	return m_starColor;
+}
+
+std::string uvy::StarSystem::GetStarColorString() const {
+	switch (m_starColor) {
 	case StarColor::Red:
 		return "Red";
 		break;
@@ -111,194 +117,204 @@ std::string StarSystem::GetStarColorString() const {
 	}
 }
 
-void StarSystem::DetermineStarSize(std::mt19937_64& l_rng) {
+const StarPositionInSector& uvy::StarSystem::GetStarPositionInSector() const {
+	return m_starPositionInSector;
+}
 
-    float medium     = 8.0f;
-    float large      = 12.0f;
-    float small      = 4.0f;
-    float hyperLarge = 24.0f;
+std::string uvy::StarSystem::GetStarPositionInSectorString() const {
+	
+	switch (m_starPositionInSector) {
+	case StarPositionInSector::TopLeft:
+		return "Top Left";
+		break;
+	case StarPositionInSector::TopRight:
+		return "Top Right";
+		break;
+	case StarPositionInSector::BottomLeft:
+		return "Bottom Left";
+		break;
+	case StarPositionInSector::BottomRight:
+		return "Bottom Right";
+		break;
+	case StarPositionInSector::CenterTop:
+		return "Center Top";
+		break;
+	case StarPositionInSector::CenterLeft:
+		return "Center Left";
+		break;
+	case StarPositionInSector::CenterRight:
+		return "Center Right";
+		break;
+	case StarPositionInSector::Center:
+		return "Center";
+		break;
+	default:
+		throw std::runtime_error("StarSystem::GetStarPositionInSectorString() - Invalid StarPositionInSector");
+	}
 
-    //Chance and Size
-    std::vector<std::pair<double, float>> sizeProbabilities = {
-        {0.565, medium     }, //56.5%
-        {0.250, large      }, //25.0%  
-        {0.180, small      }, //18.0% 
-        {0.005, hyperLarge }  //00.5%  
-    };
+}
 
-    std::uniform_real_distribution<double> dist(0.0, 1.0);
-    double sizeRoll = dist(l_rng);
+const int64_t& uvy::StarSystem::GetID() const {
+	return m_id;
+}
 
-    double cumulativeProbability = 0.0;
+const float uvy::StarSystem::GetStarRadius() const {
+	return m_starRadius;
+}
 
-    for (auto& sizeProbability : sizeProbabilities) {
+const bool uvy::StarSystem::HasStar() const {
+	return m_hasStar;
+}
+
+void uvy::StarSystem::GenerateSeed(const int64_t& l_x, const int64_t& l_y) {
+
+	m_id = SharedData::Get().GenerateSeed(l_x, l_y);
+	SharedData::GetRNG().seed(m_id); //setting unique seed to rng, so that every star stays the same
+
+}
+
+bool uvy::StarSystem::GenerateStar() {
+
+	std::uniform_real_distribution<float> dst(0.f, 1.f);
+
+	if (dst(SharedData::GetRNG()) > SharedData::GetUniverse().GetStarSystemChance())
+		return false;
+
+	m_hasStar = true;
+	return true;
+}
+
+void uvy::StarSystem::DetermineStarSize() {
+
+	std::mt19937_64& rng = SharedData::GetRNG();
+
+	float medium	 = 8.0f;
+	float large		 = 12.0f;
+	float small		 = 4.0f;
+	float hyperLarge = 24.0f;
+
+	//Chance and Size
+	std::vector<std::pair<double, float>> sizeProbabilities = {
+		{0.565, medium     }, //56.5%
+		{0.250, large      }, //25.0%  
+		{0.180, small      }, //18.0% 
+		{0.005, hyperLarge }  //00.5%  
+	};
+
+	std::uniform_real_distribution<double> dist(0.0, 1.0);
+	double sizeRoll = dist(rng);
+
+	double cumulativeProbability = 0.0;
+
+	for (auto& sizeProbability : sizeProbabilities) {
 
 		cumulativeProbability += sizeProbability.first;
 
 		if (sizeRoll > cumulativeProbability)
 			continue;
 
-        //Checking and setting StarSize (6 is medium, 9 is large, 4 is small, 17 is hyper large)
-        if (sizeProbability.second == medium)
-			Size = StarSize::Medium;
+		//Checking and setting StarSize
+		if (sizeProbability.second == medium)
+			m_starSize = StarSize::Medium;
 		else if (sizeProbability.second == large)
-			Size = StarSize::Large;
+			m_starSize = StarSize::Large;
 		else if (sizeProbability.second == small)
-			Size = StarSize::Small;
+			m_starSize = StarSize::Small;
 		else if (sizeProbability.second == hyperLarge)
-			Size = StarSize::HyperLarge;
-        else
-            throw std::runtime_error("StarSystem::DetermineStarSize() - Invalid StarSize");
+			m_starSize = StarSize::HyperLarge;
+		else
+			throw std::runtime_error("StarSystem::DetermineStarSize() - Invalid StarSize");
 
-		StarShape.setRadius(sizeProbability.second);
-        ShapeRadius = sizeProbability.second;
-		//Setting origin to middle
-		StarShape.setOrigin(StarShape.getGlobalBounds().width / 2, StarShape.getGlobalBounds().height / 2);
+		m_starShape.setRadius(sizeProbability.second);
+		m_starRadius = sizeProbability.second;
+		m_starShape.setOrigin(m_starShape.getGlobalBounds().width / 2, m_starShape.getGlobalBounds().height / 2);
 
-        //Selector shape
-        StarSelectorShape.setSize(sf::Vector2f(StarShape.getGlobalBounds().width * 2, StarShape.getGlobalBounds().height* 2));
-        StarSelectorShape.setOrigin(StarSelectorShape.getGlobalBounds().width / 2, StarSelectorShape.getGlobalBounds().height / 2);
-        StarSelectorShape.setFillColor(sf::Color::Transparent);
-        StarSelectorShape.setOutlineColor(sf::Color::White);
-        StarSelectorShape.setOutlineThickness(1.5);
+		//Selector shape
+		m_starSelector.setSize(sf::Vector2f(m_starShape.getGlobalBounds().width * 2, m_starShape.getGlobalBounds().height * 2));
+		m_starSelector.setOrigin(m_starSelector.getGlobalBounds().width / 2, m_starSelector.getGlobalBounds().height / 2);
+		m_starSelector.setFillColor(sf::Color::Transparent);
+		m_starSelector.setOutlineColor(sf::Color::White);
+		m_starSelector.setOutlineThickness(1.5);
 
 
 		return;
 	}
 }
 
-void StarSystem::DetermineStarColor(std::mt19937_64& l_rng) {
-    
-    //Chance and Color
-    std::vector<std::pair<double, sf::Color>> colorProbabilities = {
+void uvy::StarSystem::DetermineStarColor() {
+
+	std::mt19937_64& rng = SharedData::GetRNG();
+
+	//Chance and Color
+	std::vector<std::pair<double, sf::Color>> colorProbabilities = {
 		{ 0.525, sf::Color::Red                      }, //52.5%
 		{ 0.325, sf::Color(255, 69, 0)    /*Orange*/ }, //32.5%
-        { 0.075, sf::Color(255, 255, 159) /*White*/  }, //07.5%
+		{ 0.075, sf::Color(255, 255, 159) /*White*/  }, //07.5%
 		{ 0.050, sf::Color::Blue                     }, //05.0%
-        { 0.025, sf::Color(50, 23, 77)   /*Purple*/  }, //02.5%
+		{ 0.025, sf::Color(50, 23, 77)   /*Purple*/  }, //02.5%
 	};
 
-    std::uniform_real_distribution<double> dist(0.0, 1.0);
-    double colorRoll = dist(l_rng);
+	std::uniform_real_distribution<double> dist(0.0, 1.0);
+	double colorRoll = dist(rng);
 
-    double cumulativeProbability = 0.0;
+	double cumulativeProbability = 0.0;
 
-    for (auto& colorProbability : colorProbabilities) {
+	for (auto& colorProbability : colorProbabilities) {
 
 		cumulativeProbability += colorProbability.first;
 
-        if (colorRoll > cumulativeProbability)
-            continue;
-        //Checking and setting StarColor
-        if (colorProbability.second == sf::Color::Red)
-            Color = StarColor::Red;
-        else if (colorProbability.second == sf::Color(255, 69, 0))
-            Color = StarColor::Orange;
+		if (colorRoll > cumulativeProbability)
+			continue;
+		//Checking and setting StarColor
+		if (colorProbability.second == sf::Color::Red)
+			m_starColor = StarColor::Red;
+		else if (colorProbability.second == sf::Color(255, 69, 0))
+			m_starColor = StarColor::Orange;
 		else if (colorProbability.second == sf::Color(255, 255, 159))
-			Color = StarColor::White;
+			m_starColor = StarColor::White;
 		else if (colorProbability.second == sf::Color::Blue)
-			Color = StarColor::Blue;
+			m_starColor = StarColor::Blue;
 		else if (colorProbability.second == sf::Color(50, 23, 77))
-			Color = StarColor::Purple;
-        else 
-           throw std::runtime_error("StarSystem::DetermineStarColor() - Invalid StarColor");
+			m_starColor = StarColor::Purple;
+		else
+			throw std::runtime_error("StarSystem::DetermineStarColor() - Invalid StarColor");
 
 
-		StarShape.setFillColor(colorProbability.second);
+		m_starShape.setFillColor(colorProbability.second);
 
 		return;
 	}
-
 }
 
-void StarSystem::DetermineStarPosition() {
-    //Variables
-    auto& rng = *SharedData::GetRNG();
+void uvy::StarSystem::DetermineStarPosition() {
+	
+	std::mt19937_64& rng = SharedData::GetRNG();
 
-    //Chance and position
-    std::vector<std::pair<double, StarPositionInSector>> positions { 
-        /*Top Left     */ {0.125, StarPositionInSector::TopLeft     },
-        /*Top Right    */ {0.125, StarPositionInSector::TopRight    },
-        /*Bottom Left  */ {0.125, StarPositionInSector::BottomLeft  },
-        /*Bottom Right */ {0.125, StarPositionInSector::BottomRight },
-        /*Center Top   */ {0.125, StarPositionInSector::CenterTop   },
-        /*Center Left  */ {0.125, StarPositionInSector::CenterLeft  },
-        /*Center Right */ {0.125, StarPositionInSector::CenterRight },
-        /*Center       */ {0.125, StarPositionInSector::Center      },
-    };
-
-    std::uniform_real_distribution<double> dist(0.0, 1.0);
-    double positionRoll = dist(rng);
-
-    double cumulativeProbability = 0.0;
-
-    for (auto& position : positions) {
-
-        cumulativeProbability += position.first;
-
-        if (positionRoll > cumulativeProbability)
-            continue;
-
-        PositionInSector = position.second;
-        return;
-    }
-}
-
-void StarSystem::GeneratePlanet(int64_t l_seed) {
-
-    //Variables
-    std::mt19937_64& rng = *SharedData::GetRNG();
-
-    //Generating single planet
-    auto planet = std::make_shared<Planet>(l_seed);
-    if (!planet->Exists)
-        return; // No planet
-    
-
-    HasPlanet = true;
-    Planets.push_back(std::move(planet));
-
-    //Generating multiple planets
-    std::uniform_real_distribution<double> dist(0.0, 1.0);
-
-    //Planets to add
-    std::vector<std::pair<double, uint64_t>> planetProbabilities = {
-		{0.125,   1},  //12.5%, just one planet, which is the one that we already added
-		{0.125,   2},  //12.5%
-		{0.125,   3},  //12.5%
-		{0.125,   4},  //12.5%
-		{0.125,   5},  //12.5%
-		{0.125,   6},  //12.5%
-		{0.125,   7},  //12.5%,
-		{0.125,   8}   //12.5%, maximum ammount of planets
+	//Chance and position
+	std::vector<std::pair<double, StarPositionInSector>> positions{
+		/*Top Left     */ {0.125, StarPositionInSector::TopLeft     },
+		/*Top Right    */ {0.125, StarPositionInSector::TopRight    },
+		/*Bottom Left  */ {0.125, StarPositionInSector::BottomLeft  },
+		/*Bottom Right */ {0.125, StarPositionInSector::BottomRight },
+		/*Center Top   */ {0.125, StarPositionInSector::CenterTop   },
+		/*Center Left  */ {0.125, StarPositionInSector::CenterLeft  },
+		/*Center Right */ {0.125, StarPositionInSector::CenterRight },
+		/*Center       */ {0.125, StarPositionInSector::Center      },
 	};
 
-    uint64_t numOfPlanets        = 0;
+	std::uniform_real_distribution<double> dist(0.0, 1.0);
+	double positionRoll = dist(rng);
+
 	double cumulativeProbability = 0.0;
 
-    //Processing how many planets to add
-    for (auto& planetProbability : planetProbabilities) {
+	for (auto& position : positions) {
 
-		cumulativeProbability += planetProbability.first;
+		cumulativeProbability += position.first;
 
-		if (dist(rng) > cumulativeProbability)
+		if (positionRoll > cumulativeProbability)
 			continue;
 
-        numOfPlanets = planetProbability.second;
-		break;
+		m_starPositionInSector = position.second;
+		return;
 	}
-
-    //Adding planets
-    for (uint64_t i = 0; i < numOfPlanets; ++i) {
-        
-        if(numOfPlanets == 1) // If there is only one planet, we already added it, so we skip this iteration
-			continue;
-
-        if (i == 0 && numOfPlanets > 1) // If this is the first planet and there are more planets to add, skip this first iteration.  
-            continue;
-
-        auto planet = std::make_shared<Planet>();
-		Planets.push_back(std::move(planet));
-	
-    }
 }

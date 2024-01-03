@@ -1,37 +1,55 @@
 #pragma once
 #include "pch.h"
 
-enum class StarSize  { Small, Medium, Large, HyperLarge };
-enum class StarColor { Red, Orange, White, Blue, Purple };
+enum class StarSize				{ Small, Medium, Large, HyperLarge };
+enum class StarColor			{ Red, Orange, White, Blue, Purple };
 enum class StarPositionInSector { TopLeft, TopRight, BottomLeft, BottomRight, CenterTop, CenterLeft, CenterRight, Center };
 
-struct Planet;
+namespace uvy {
 
-struct StarSystem {
+	class StarSystem {
 
-    StarSystem(int64_t l_x, int64_t l_y);
+		friend class Universe;
 
-    void SetStarPositionInSector(int64_t l_row, int64_t l_column, int64_t l_startColumn, int64_t l_startRow);
+	public:
+		StarSystem(const int64_t& l_x, const int64_t& l_y);
+		~StarSystem();
 
-    sf::CircleShape StarShape;
-    sf::RectangleShape StarSelectorShape;
-    StarSize Size;
-    float ShapeRadius;
-    StarColor Color;
-    StarPositionInSector PositionInSector;
-    sf::Vector2f Position;
-    std::vector<std::shared_ptr<Planet>> Planets;
-    uint64_t ID;
-    bool HasStar;
-    bool HasPlanet;
-    float ChanceForMultiplePlanets;
+		void SetStarPositionInSector(const int64_t& l_x, const int64_t& l_y); //Used by Universe to set the position of the star in the sector
 
-    std::string GetStarSizeString()  const;
-    std::string GetStarColorString() const;
+		//Setters//
 
-private:
-    void DetermineStarSize(std::mt19937_64& l_rng);
-    void DetermineStarColor(std::mt19937_64& l_rng);
-    void DetermineStarPosition();
-    void GeneratePlanet(int64_t l_seed);
-};
+		//Getters//
+
+		sf::CircleShape&			GetStarShape();
+		sf::RectangleShape&			GetStarSelector();
+		const StarSize&				GetStarSize()					const;
+		std::string					GetStarSizeString()				const;
+		const StarColor&			GetStarColor()					const;
+		std::string				    GetStarColorString()			const;
+		const StarPositionInSector& GetStarPositionInSector()		const;
+		std::string					GetStarPositionInSectorString() const;
+		const int64_t&				GetID()							const;
+		const float					GetStarRadius()					const;
+		const bool					HasStar()					const;
+
+	private:
+		void GenerateSeed(const int64_t& l_x, const int64_t& l_y);
+		bool GenerateStar();
+		void DetermineStarSize();
+		void DetermineStarColor();
+		void DetermineStarPosition();
+
+	private:
+		sf::CircleShape      m_starShape;
+		sf::RectangleShape   m_starSelector;		//If mouse is over star, this will be drawn
+		StarSize		     m_starSize;
+		StarColor		     m_starColor;
+		StarPositionInSector m_starPositionInSector;
+		int64_t			 m_id;					 //Unique ID for every star. Retrieved by unique seed.
+		float			     m_starRadius;
+		bool			     m_hasStar;
+
+	};
+
+}
