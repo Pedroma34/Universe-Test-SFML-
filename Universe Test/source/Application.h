@@ -16,9 +16,6 @@ namespace uvy {
 	//////////////////////////////////////////////////////////////////////////
 	class Application {
 	public:
-
-
-
 		Application();
 
 
@@ -52,10 +49,10 @@ namespace uvy {
 
 
 		bool IsRunning() const;
+
+
+
 	private:
-
-
-
 		std::mt19937_64    m_rng;			//Random engine for the universe
 		std::random_device m_rd;			//Random device for true randomness when needed
 		Window		       m_window;

@@ -15,9 +15,6 @@ namespace uvy {
 	//////////////////////////////////////////////////////////////////////////
 	class Camera {
 	public:
-
-
-
 		Camera();
 
 
@@ -64,10 +61,10 @@ namespace uvy {
 		const bool&				   GetSeeCameraShape()	  const;
 		const bool&				   GetOutOfBoundsOnWidth()const;
 		const bool&				   GetOutOfBoundsOnHeight()const;
+
+
+
 	private:
-
-
-
 		//////////////////////////////////////////////////////////////////////////
 		/// Checks if camera is out of bounds, sets the out of bounds bools,
 		/// and applies velocity to the camera to reach behind the threshold.
