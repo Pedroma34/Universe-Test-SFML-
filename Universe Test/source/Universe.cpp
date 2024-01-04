@@ -106,7 +106,6 @@ bool uvy::Universe::GenerateStarSystem(const int64_t& l_x, const int64_t& l_y, i
 		return false;
 	
 	l_starsDrawn++;
-	starSystem.SetStarPositionInSector(l_x, l_y);
 	m_drawQueue.push_back(std::make_unique<sf::CircleShape>(starSystem.GetStarShape()));
 }
 
@@ -159,7 +158,6 @@ void uvy::Universe::MouseHoverStar() {
 	StarSystem starSystem(mouseSec.x, mouseSec.y);
 	if (!starSystem.HasStar())
 		return;
-	starSystem.SetStarPositionInSector(mouseSec.x, mouseSec.y);
 	Window& window = SharedData::GetWindow();
 	sf::Vector2f mousePos = window.GetWindow().mapPixelToCoords(sf::Mouse::getPosition(window.GetWindow()));//Mouse view position
 	if (!starSystem.GetStarShape().getGlobalBounds().contains(mousePos))

@@ -3,9 +3,14 @@
 #include "Universe.h"
 
 uvy::StarSystem::StarSystem(const int64_t& l_x, const int64_t& l_y) :
-m_starSize(StarSize::Small), m_starColor(StarColor::Orange),
+
+m_starSize(StarSize::Small), 
+m_starColor(StarColor::Orange),
 m_starPositionInSector(StarPositionInSector::Center),
-m_id(0), m_starRadius(1.f), m_hasStar(false)
+m_id(0), 
+m_starRadius(1.f), 
+m_hasStar(false)
+
 {
 
 	GenerateSeed(l_x, l_y);
@@ -16,6 +21,7 @@ m_id(0), m_starRadius(1.f), m_hasStar(false)
 	DetermineStarColor();
 	DetermineStarSize();
 	DetermineStarPosition();
+	SetStarPositionInSector(l_x, l_y);
 }
 
 uvy::StarSystem::~StarSystem() {}
@@ -66,7 +72,7 @@ sf::RectangleShape& uvy::StarSystem::GetStarSelector() {
 	return m_starSelector;
 }
 
-const StarSize& uvy::StarSystem::GetStarSize() const {
+const uvy::StarSize& uvy::StarSystem::GetStarSize() const {
 	return m_starSize;
 }
 
@@ -91,7 +97,7 @@ std::string uvy::StarSystem::GetStarSizeString() const {
 
 }
 
-const StarColor& uvy::StarSystem::GetStarColor() const {
+const uvy::StarColor& uvy::StarSystem::GetStarColor() const {
 	return m_starColor;
 }
 
@@ -117,7 +123,7 @@ std::string uvy::StarSystem::GetStarColorString() const {
 	}
 }
 
-const StarPositionInSector& uvy::StarSystem::GetStarPositionInSector() const {
+const uvy::StarPositionInSector& uvy::StarSystem::GetStarPositionInSector() const {
 	return m_starPositionInSector;
 }
 
@@ -186,6 +192,13 @@ bool uvy::StarSystem::GenerateStar() {
 
 void uvy::StarSystem::DetermineStarSize() {
 
+	//////////////////////////////////////////////////////////////////////////
+	/// This function works by rolling a random floating 
+	/// number between 0 and 1 and comparing it to the cumulative 
+	/// probability of each size. If the roll is less than the 
+	/// cumulative probability, then the size is set.
+	//////////////////////////////////////////////////////////////////////////
+
 	std::mt19937_64& rng = SharedData::GetRNG();
 
 	float medium	 = 8.0f;
@@ -195,10 +208,12 @@ void uvy::StarSystem::DetermineStarSize() {
 
 	//Chance and Size
 	std::vector<std::pair<double, float>> sizeProbabilities = {
+
 		{0.565, medium     }, //56.5%
 		{0.250, large      }, //25.0%  
 		{0.180, small      }, //18.0% 
 		{0.005, hyperLarge }  //00.5%  
+
 	};
 
 	std::uniform_real_distribution<double> dist(0.0, 1.0);

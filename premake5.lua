@@ -87,3 +87,7 @@ project "Universe Test"
 			"ImGui-SFML.lib"
         }
 		optimize "On"
+
+		filter { "configurations:Release", "system:Windows" }
+		linkoptions { "/SUBSYSTEM:WINDOWS" }
+	
