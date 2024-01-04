@@ -1,7 +1,7 @@
 #pragma once
 
 #include "pch.h"
-#include "StateGame.h"
+#include "States/StateGame.h"
 
 namespace uvy {
 	class StateManager {

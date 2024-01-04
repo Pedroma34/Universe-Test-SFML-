@@ -1,6 +1,6 @@
 #include "pch.h"
 #include "Universe.h"
-#include "StarSystem.h"
+#include "StarSystem/StarSystem.h"
 
 uvy::Universe::Universe() : m_sectorSize({ 250, 250}), m_starSystemChance(0.30f),
 m_sectorsDrawn(0), m_starsDrawn(0), m_drawSectors(true)
