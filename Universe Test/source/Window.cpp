@@ -3,6 +3,7 @@
 #include "States/StateManager.h"
 #include "Camera.h"
 #include "Universe.h"
+#include "StarSystem/StarSystem.h"
 
 namespace uvy {
 	Window::Window(const sf::Vector2<uint64_t>& l_size)
@@ -31,8 +32,17 @@ namespace uvy {
 			else if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Space)
 				SetRandomLocationInUniverse();
 
-			else if (event.type == sf::Event::MouseWheelScrolled)
+			if (event.type == sf::Event::MouseWheelScrolled)
 				ZoomIn(event.mouseWheelScroll.delta);
+
+			if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
+				Universe& uni = SharedData::GetUniverse();
+				std::shared_ptr<StarSystem> starUnderMouse = uni.GetStarUnderMouse();
+				if (starUnderMouse != nullptr) {
+					auto star = uni.AddStarToModify(starUnderMouse).lock(); //Modifying star
+					star->GetStarShape().setFillColor(sf::Color::Magenta);
+				}
+			}
 
 		}
 

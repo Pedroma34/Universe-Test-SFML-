@@ -32,6 +32,29 @@ void uvy::Universe::Render(sf::View& l_view) {
 	m_drawQueue.clear();
 }
 
+std::weak_ptr<uvy::StarSystem> uvy::Universe::DoesSectorHaveStarModified(const int64_t& l_x, const int64_t& l_y) {
+
+	auto starModified = m_starSystems.find(GetSeed(l_x, l_y));
+	if (starModified == m_starSystems.end())
+		return std::weak_ptr<StarSystem>(); 
+	
+	return starModified->second;
+	
+
+}
+
+std::weak_ptr<uvy::StarSystem> uvy::Universe::AddStarToModify(std::weak_ptr<class StarSystem> l_starSystem) {
+
+	auto star = m_starSystems.find(l_starSystem.lock()->GetID());
+
+	//Check if this star system is already in the list and return if it has
+	if (star != m_starSystems.end())
+		return star->second;
+	
+	//Add it to the modified list
+	return m_starSystems.emplace(l_starSystem.lock()->GetID(), l_starSystem.lock()).first->second;
+}
+
 void uvy::Universe::SetSectorSize(const sf::Vector2<int64_t>& l_sectorSize) {
 	m_sectorSize = l_sectorSize;
 }
@@ -42,6 +65,34 @@ void uvy::Universe::SetStarSystemChance(const float l_starSystemChance) {
 
 void uvy::Universe::SetDrawSectors(const bool l_drawSectors) {
 	m_drawSectors = l_drawSectors;
+}
+
+std::shared_ptr<uvy::StarSystem> uvy::Universe::GetStarUnderMouse() {
+
+	//Get the sector that the mouse is in
+	sf::Vector2<int64_t> mouseSec = GetMouseSector();
+
+	std::shared_ptr<StarSystem> starSystem;
+
+	//Check if this sector has a star system that has been modified
+	auto starModified = DoesSectorHaveStarModified(mouseSec.x, mouseSec.y);
+
+	if (!starModified.expired())
+		starSystem = starModified.lock(); //Set the star system to the one that has been modified
+	else
+		//Create a new star system
+		starSystem = std::make_shared<StarSystem>(mouseSec.x, mouseSec.y);
+
+	//Check if this sector has a star system and return if it doesn't
+	if (!starSystem->HasStar())
+		return nullptr;
+
+	Window& window = SharedData::GetWindow();
+	sf::Vector2f mousePos = window.GetWindow().mapPixelToCoords(sf::Mouse::getPosition(window.GetWindow()));//Mouse view position
+	if (!starSystem->GetStarShape().getGlobalBounds().contains(mousePos))
+		return nullptr; //Mouse isn't over star, so return null
+
+	return starSystem;
 }
 
 const sf::Vector2<int64_t>& uvy::Universe::GetSectorSize() const {
@@ -58,6 +109,10 @@ const uint64_t& uvy::Universe::GetSectorsDrawn() const {
 
 const uint64_t& uvy::Universe::GetStarsDrawn() const {
 	return m_starsDrawn;
+}
+
+uint64 uvy::Universe::GetStarsModified() const {
+	return m_starSystems.size();
 }
 
 const sf::Vector2<int64_t>& uvy::Universe::GetMouseSector() const {
@@ -101,12 +156,22 @@ void uvy::Universe::ProcessSectors(const sf::Vector2i& l_sectorOnTopLeftView, co
 
 bool uvy::Universe::GenerateStarSystem(const int64_t& l_x, const int64_t& l_y, int64_t& l_starsDrawn) {
 
+	//Check if this sector has a star system that has been modified
+	std::weak_ptr<StarSystem> starModified = DoesSectorHaveStarModified(l_x, l_y);
+	if (!starModified.expired()) {
+		m_drawQueue.push_back(std::make_unique<sf::CircleShape>(starModified.lock()->GetStarShape()));
+		l_starsDrawn++;
+		return true; //Star system has been modified, so we don't need to generate it again
+	}
+
+	//This sector has no star system tht has been modified, so we need to generate it
 	StarSystem starSystem(l_x, l_y);
 	if (!starSystem.HasStar())
 		return false;
 	
 	l_starsDrawn++;
 	m_drawQueue.push_back(std::make_unique<sf::CircleShape>(starSystem.GetStarShape()));
+	return true;
 }
 
 void uvy::Universe::DrawSector(const int64_t& l_x, const int64_t& l_y) {
@@ -153,31 +218,37 @@ bool uvy::Universe::IsMouseInSector(const int64_t& l_x, const int64_t& l_y) {
 
 void uvy::Universe::MouseHoverStar() {
 
-	//Draw selector around it//
+	std::shared_ptr<StarSystem> starSystem = GetStarUnderMouse();
+
+	if(starSystem == nullptr)
+		return;
+
+	Window& window				  = SharedData::GetWindow();
 	sf::Vector2<int64_t> mouseSec = GetMouseSector();
-	StarSystem starSystem(mouseSec.x, mouseSec.y);
-	if (!starSystem.HasStar())
-		return;
-	Window& window = SharedData::GetWindow();
-	sf::Vector2f mousePos = window.GetWindow().mapPixelToCoords(sf::Mouse::getPosition(window.GetWindow()));//Mouse view position
-	if (!starSystem.GetStarShape().getGlobalBounds().contains(mousePos))
-		return;
-	starSystem.GetStarSelector().setPosition(starSystem.GetStarShape().getPosition());
-	m_drawQueue.push_back(std::make_unique<sf::RectangleShape>(starSystem.GetStarSelector()));
+
+	starSystem->GetStarSelector().setPosition(starSystem->GetStarShape().getPosition());
+	m_drawQueue.push_back(std::make_unique<sf::RectangleShape>(starSystem->GetStarSelector()));
+
+	//Modify. It already checks if it's in the list
+	//AddStarToModify(mouseSec.x, mouseSec.y, starSystem);
 
 	//Display info//
-	sf::Vector2f starScreenPos			= (sf::Vector2f)window.GetWindow().mapCoordsToPixel(starSystem.GetStarShape().getPosition());
+	sf::Vector2f starScreenPos			= (sf::Vector2f)window.GetWindow().mapCoordsToPixel(starSystem->GetStarShape().getPosition());
 	const sf::Vector2<uint64_t> winSize = SharedData::GetWindow().GetSize();
 
 	ImGui::Begin("Star Info", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse);
 	ImGui::SetWindowFontScale(SharedData::GetWindowFontScale());
 	ImGui::SetWindowSize(ImVec2(winSize.x * 0.15,winSize.y * 0.12));
 	ImVec2 thisWinSize = ImGui::GetWindowSize();
-	ImGui::SetWindowPos(ImVec2(starScreenPos.x - (thisWinSize.x / 2), starScreenPos.y + starSystem.GetStarShape().getGlobalBounds().width * 1.5));
+	ImGui::SetWindowPos(ImVec2(starScreenPos.x - (thisWinSize.x / 2), starScreenPos.y + starSystem->GetStarShape().getGlobalBounds().width * 1.5));
 	if(SharedData::GetDebug()) 
-		ImGui::Text("Star ID: %d", starSystem.GetID());
+		ImGui::Text("Star ID: %d", starSystem->GetID());
 	ImGui::Text("Star Position: %d, %d", mouseSec.x, mouseSec.y);
-	ImGui::Text("Star Size: %s", starSystem.GetStarSizeString().c_str());
-	ImGui::Text("Star Color: %s", starSystem.GetStarColorString().c_str());
+	ImGui::Text("Star Size: %s", starSystem->GetStarSizeString().c_str());
+	ImGui::Text("Star Color: %s", starSystem->GetStarColorString().c_str());
 	ImGui::End();
+}
+
+int64 uvy::Universe::GetSeed(const int64_t& l_x, const int64_t& l_y) {
+	return SharedData::Get().GenerateSeed(l_x, l_y);
 }
