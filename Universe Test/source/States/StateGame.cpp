@@ -93,6 +93,7 @@ namespace uvy {
 		ImGui::SetWindowPos(ImVec2(0, 0));
 		ImGui::Text("Sectors drawn: %d", m_universe->GetSectorsDrawn());
 		ImGui::Text("Stars drawn: %d", m_universe->GetStarsDrawn());
+		ImGui::Text("Stars modified: %d", m_universe->GetStarsModified());
 		static bool drawSectors = m_universe->GetDrawSectors();
 		if (ImGui::Checkbox("Draw Sectors", &drawSectors))
 			m_universe->SetDrawSectors(drawSectors);
@@ -100,14 +101,14 @@ namespace uvy {
 		if (ImGui::SliderFloat("Star system chance", &chanceSlider, 0.0f, 1.0f, "%.2f"))
 			SharedData::GetUniverse().SetStarSystemChance(chanceSlider);
 		ImGui::Text("View Size: %.1f, %.1f", m_view.getSize().x, m_view.getSize().y);
-		ImGui::Text("Camera Position in Universe: %d, %d", position.x, position.y);
-		ImGui::Text("Camera Position: %.1f, %1.f", m_view.getCenter().x, m_view.getCenter().y);
 		ImGui::Text("Sector Under Mouse: %d, %d", m_universe->GetMouseSector().x, m_universe->GetMouseSector().y);
 		static sf::Vector2<int32_t> sectorInput = static_cast<sf::Vector2<int32_t>>(m_universe->GetSectorSize());
 		ImGui::InputInt("Sector Size x", &sectorInput.x);
 		ImGui::InputInt("Sector Size y", &sectorInput.y);
 		if (ImGui::Button("Set Sector Size"))
 			m_universe->SetSectorSize(sf::Vector2<int64_t>(sectorInput.x, sectorInput.y));
+		ImGui::Text("Camera Position in Universe: %d, %d", position.x, position.y);
+		ImGui::Text("Camera Position: %.1f, %1.f", m_view.getCenter().x, m_view.getCenter().y);
 		ImGui::Text("Camera Zoom: %.1f", m_view.getSize().x / m_camera->GetOriginalViewSize().x);
 		ImGui::Text("Camera Velocity: %.1f, %.1f", m_camera->GetVelocity().x, m_camera->GetVelocity().y);
 		ImGui::Text("Camera Max Velocity: %.1f, %.1f", m_camera->GetMaxVelocity().x, m_camera->GetMaxVelocity().y);
