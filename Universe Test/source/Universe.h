@@ -103,7 +103,8 @@ namespace uvy {
 		void SetSectorSize(const sf::Vector2<int64_t>& l_sectorSize);
 		void SetStarSystemChance(const float l_starSystemChance);
 		void SetDrawSectors(const bool l_drawSectors);
-
+		void SetSelectedModifiedStar(std::weak_ptr<class StarSystem> l_starSelectedModified);
+		void SetSelectedStar(std::weak_ptr<class StarSystem> l_starSelected);
 
 
 		//Getters//
@@ -114,6 +115,20 @@ namespace uvy {
 		/// @returns A weak pointer to the star system that the mouse is hovering.
 		//////////////////////////////////////////////////////////////////////////
 		std::shared_ptr<class StarSystem> GetStarUnderMouse();
+
+		//////////////////////////////////////////////////////////////////////////
+		/// Returns the star that was last selected. Note that this only returns
+		/// stars that were modified.
+		//////////////////////////////////////////////////////////////////////////
+		std::weak_ptr<class StarSystem>   GetSelectedModifiedStar();
+
+		//////////////////////////////////////////////////////////////////////////
+		/// Returns the star that was last selected. Note that this only returns
+		/// stars that were procedually generated, not from the modified
+		/// container. It creates a new star and stores it in the returned pointer.
+		//////////////////////////////////////////////////////////////////////////
+		std::shared_ptr<class StarSystem> GetSelectedStar();
+
 		const sf::Vector2<int64_t>& GetSectorSize()  const;
 		const float GetStarSystemChance()			 const;
 		const uint64_t& GetSectorsDrawn()		     const;
@@ -130,8 +145,10 @@ namespace uvy {
 		std::vector<std::unique_ptr<sf::Drawable>> m_drawQueue;
 		uint64_t								   m_sectorsDrawn;
 		uint64_t								   m_starsDrawn;
-		StarSystemContainer						   m_starSystems; //Stars systems that were modified
-		sf::Vector2<int64_t>					   m_mouseSector; //Which sector is mouse in
+		StarSystemContainer						   m_starSystems;          //Stars systems that were modified
+		sf::Vector2<int64_t>					   m_mouseSector;          //Which sector is mouse in
+		std::weak_ptr<class StarSystem>			   m_starSelectedModified; //Keeps track of star that was last selected (modified only)
+		std::shared_ptr<class StarSystem>		   m_starSelected;         //Keeps track of star that is currently selected (procedually generated)
 		bool									   m_drawSectors;
 
 

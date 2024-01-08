@@ -23,7 +23,7 @@ float uvy::SharedData::GetWindowFontScale() {
 	else if (winSize.x > 1280 && winSize.x <= 1920)
 		return 1.4f;
 	else
-		return 2.f;
+		return 2.2f;
 }
 
 void uvy::SharedData::SetApplication(Application* l_application) {

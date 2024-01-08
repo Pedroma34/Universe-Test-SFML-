@@ -3,6 +3,7 @@
 #include "Universe.h"
 #include "Camera.h"
 #include "Application.h"
+#include "StarSystem/StarSystem.h"
 
 namespace uvy {
 	void StateGame::OnCreate() {
@@ -77,6 +78,7 @@ namespace uvy {
 	void StateGame::ImGui() {
 		DebugImGui();
 		MenuImGui();
+		SelectedStarGui();
 	}
 
 	void StateGame::DebugImGui() {
@@ -94,6 +96,8 @@ namespace uvy {
 		ImGui::Text("Sectors drawn: %d", m_universe->GetSectorsDrawn());
 		ImGui::Text("Stars drawn: %d", m_universe->GetStarsDrawn());
 		ImGui::Text("Stars modified: %d", m_universe->GetStarsModified());
+		std::weak_ptr<StarSystem> selectedStar = m_universe->GetSelectedStar();
+		ImGui::Text("Has star been selected: %s", selectedStar.expired() ? "false" : "true");
 		static bool drawSectors = m_universe->GetDrawSectors();
 		if (ImGui::Checkbox("Draw Sectors", &drawSectors))
 			m_universe->SetDrawSectors(drawSectors);
@@ -158,6 +162,34 @@ namespace uvy {
 		ImGui::End();
 
 
+	}
+
+	void StateGame::SelectedStarGui() {
+		
+		Universe& uni = SharedData::GetUniverse();
+
+		std::shared_ptr<StarSystem> selectedStar = uni.GetSelectedStar();
+
+		if (selectedStar == nullptr)
+			return;
+
+		const sf::Vector2<uint64_t> winSize = SharedData::GetWindow().GetSize();
+
+		ImGui::Begin("Selected Star", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | 
+			ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBringToFrontOnFocus | 
+		ImGuiWindowFlags_NoFocusOnAppearing);
+		ImGui::SetWindowFontScale(SharedData::GetWindowFontScale());
+		ImVec2 thisWindowSize = ImGui::GetWindowSize();
+		ImGui::SetWindowSize(ImVec2(winSize.x * 0.30, winSize.y * 0.30));
+		ImGui::SetWindowPos(ImVec2(winSize.x / 2 - thisWindowSize.x / 2, winSize.y - thisWindowSize.y));
+		if(SharedData::GetDebug())
+			ImGui::Text("Star ID: %d", selectedStar->GetID());
+		ImGui::Text("Star Position: %d, %d", selectedStar->GetSectorPosition().x, selectedStar->GetSectorPosition().y);
+		ImGui::Text("Star Size: %s", selectedStar->GetStarSizeString().c_str());
+		ImGui::Text("Star Color: %s", selectedStar->GetStarColorString().c_str());
+		if (ImGui::Button("Close"))
+			uni.SetSelectedStar(std::weak_ptr<StarSystem>());
+		ImGui::End();
 	}
 
 	void StateGame::HandleInput() {

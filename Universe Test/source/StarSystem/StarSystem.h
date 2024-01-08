@@ -70,6 +70,10 @@ namespace uvy {
 
 
 
+		void SetModified(const bool l_modified);
+
+
+
 		//Getters//
 
 
@@ -83,8 +87,10 @@ namespace uvy {
 		const StarPositionInSector& GetStarPositionInSector()		const;
 		std::string					GetStarPositionInSectorString() const;
 		const int64_t&				GetID()							const;
+		const sf::Vector2<int64_t>& GetSectorPosition()					const;
 		const float					GetStarRadius()					const;
 		const bool					HasStar()					const;
+		const bool					GetIsModified() const;
 
 	private:
 
@@ -129,9 +135,10 @@ namespace uvy {
 		StarColor		     m_starColor;
 		StarPositionInSector m_starPositionInSector;
 		int64_t				 m_id;					 //Unique ID for every star. Retrieved by unique seed.
+		sf::Vector2<int64_t> m_sectorPosition;  	 //Position of sector where star is located
 		float			     m_starRadius;
 		bool			     m_hasStar;				 //If star was generated or not
-
+		bool                 m_isModified;
 	};
 
 }

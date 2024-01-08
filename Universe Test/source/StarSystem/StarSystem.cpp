@@ -9,7 +9,8 @@ m_starColor(StarColor::Orange),
 m_starPositionInSector(StarPositionInSector::Center),
 m_id(0), 
 m_starRadius(1.f), 
-m_hasStar(false)
+m_hasStar(false),
+m_isModified(false)
 
 {
 
@@ -22,9 +23,14 @@ m_hasStar(false)
 	DetermineStarSize();
 	DetermineStarPosition();
 	SetStarPositionInSector(l_x, l_y);
+	m_sectorPosition = sf::Vector2<int64_t>(l_x, l_y);
 }
 
 uvy::StarSystem::~StarSystem() {}
+
+void uvy::StarSystem::SetModified(const bool l_modified) {
+	m_isModified = l_modified;
+}
 
 void uvy::StarSystem::SetStarPositionInSector(const int64_t& l_x, const int64_t& l_y) {
 
@@ -164,12 +170,20 @@ const int64_t& uvy::StarSystem::GetID() const {
 	return m_id;
 }
 
+const sf::Vector2<int64_t>& uvy::StarSystem::GetSectorPosition() const {
+	return m_sectorPosition;
+}
+
 const float uvy::StarSystem::GetStarRadius() const {
 	return m_starRadius;
 }
 
 const bool uvy::StarSystem::HasStar() const {
 	return m_hasStar;
+}
+
+const bool uvy::StarSystem::GetIsModified() const {
+	return m_isModified;
 }
 
 void uvy::StarSystem::GenerateSeed(const int64_t& l_x, const int64_t& l_y) {

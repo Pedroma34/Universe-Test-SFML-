@@ -26,6 +26,7 @@ namespace uvy {
 		void ImGui();
 		void DebugImGui();
 		void MenuImGui();
+		void SelectedStarGui();
 		void HandleInput();
 
 	private:

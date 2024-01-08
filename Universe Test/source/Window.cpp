@@ -39,8 +39,10 @@ namespace uvy {
 				Universe& uni = SharedData::GetUniverse();
 				std::shared_ptr<StarSystem> starUnderMouse = uni.GetStarUnderMouse();
 				if (starUnderMouse != nullptr) {
-					auto star = uni.AddStarToModify(starUnderMouse).lock(); //Modifying star
-					star->GetStarShape().setFillColor(sf::Color::Magenta);
+					if(starUnderMouse->GetIsModified())
+						uni.SetSelectedModifiedStar(starUnderMouse); //Set pointer to point to the star system that has been modified
+					else
+						uni.SetSelectedStar(starUnderMouse); //Creates a pointer to the procedually generated star system that has been selected
 				}
 			}
 

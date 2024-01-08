@@ -44,6 +44,9 @@ std::weak_ptr<uvy::StarSystem> uvy::Universe::DoesSectorHaveStarModified(const i
 }
 
 std::weak_ptr<uvy::StarSystem> uvy::Universe::AddStarToModify(std::weak_ptr<class StarSystem> l_starSystem) {
+	
+	if (l_starSystem.expired())
+		return std::weak_ptr<StarSystem>();
 
 	auto star = m_starSystems.find(l_starSystem.lock()->GetID());
 
@@ -52,6 +55,7 @@ std::weak_ptr<uvy::StarSystem> uvy::Universe::AddStarToModify(std::weak_ptr<clas
 		return star->second;
 	
 	//Add it to the modified list
+	l_starSystem.lock()->SetModified(true);
 	return m_starSystems.emplace(l_starSystem.lock()->GetID(), l_starSystem.lock()).first->second;
 }
 
@@ -65,6 +69,14 @@ void uvy::Universe::SetStarSystemChance(const float l_starSystemChance) {
 
 void uvy::Universe::SetDrawSectors(const bool l_drawSectors) {
 	m_drawSectors = l_drawSectors;
+}
+
+void uvy::Universe::SetSelectedModifiedStar(std::weak_ptr<class StarSystem> l_starSelectedModified) {
+	m_starSelectedModified = l_starSelectedModified; //Don't need to lock because star modified is in a container
+}
+
+void uvy::Universe::SetSelectedStar(std::weak_ptr<class StarSystem> l_starSelected) {
+	m_starSelected = l_starSelected.lock(); //Needs to be locked because star selected is not in a container
 }
 
 std::shared_ptr<uvy::StarSystem> uvy::Universe::GetStarUnderMouse() {
@@ -93,6 +105,14 @@ std::shared_ptr<uvy::StarSystem> uvy::Universe::GetStarUnderMouse() {
 		return nullptr; //Mouse isn't over star, so return null
 
 	return starSystem;
+}
+
+std::weak_ptr<class uvy::StarSystem> uvy::Universe::GetSelectedModifiedStar() {
+	return m_starSelected;
+}
+
+std::shared_ptr<class uvy::StarSystem> uvy::Universe::GetSelectedStar() {
+	return m_starSelected;
 }
 
 const sf::Vector2<int64_t>& uvy::Universe::GetSectorSize() const {
@@ -224,7 +244,6 @@ void uvy::Universe::MouseHoverStar() {
 		return;
 
 	Window& window				  = SharedData::GetWindow();
-	sf::Vector2<int64_t> mouseSec = GetMouseSector();
 
 	starSystem->GetStarSelector().setPosition(starSystem->GetStarShape().getPosition());
 	m_drawQueue.push_back(std::make_unique<sf::RectangleShape>(starSystem->GetStarSelector()));
@@ -242,8 +261,8 @@ void uvy::Universe::MouseHoverStar() {
 	ImVec2 thisWinSize = ImGui::GetWindowSize();
 	ImGui::SetWindowPos(ImVec2(starScreenPos.x - (thisWinSize.x / 2), starScreenPos.y + starSystem->GetStarShape().getGlobalBounds().width * 1.5));
 	if(SharedData::GetDebug()) 
-		ImGui::Text("Star ID: %d", starSystem->GetID());
-	ImGui::Text("Star Position: %d, %d", mouseSec.x, mouseSec.y);
+	ImGui::Text("Star ID: %d", starSystem->GetID());
+	ImGui::Text("Star Position: %d, %d", starSystem->GetSectorPosition().x, starSystem->GetSectorPosition().y);
 	ImGui::Text("Star Size: %s", starSystem->GetStarSizeString().c_str());
 	ImGui::Text("Star Color: %s", starSystem->GetStarColorString().c_str());
 	ImGui::End();
