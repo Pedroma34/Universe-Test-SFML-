@@ -168,9 +168,17 @@ namespace uvy {
 		
 		Universe& uni = SharedData::GetUniverse();
 
-		std::shared_ptr<StarSystem> selectedStar = uni.GetSelectedStar();
+			std::shared_ptr<StarSystem> starProcedual       = uni.GetSelectedStar();
+		std::weak_ptr<StarSystem>   starModified        = uni.GetSelectedModifiedStar();
 
-		if (selectedStar == nullptr)
+		std::shared_ptr <StarSystem> selectedStar;
+
+		if (starModified.expired() && starProcedual != nullptr)
+			selectedStar = starProcedual;
+		else if (!starModified.expired() && starProcedual == nullptr)
+			selectedStar = starModified.lock();
+
+		if(selectedStar == nullptr)
 			return;
 
 		const sf::Vector2<uint64_t> winSize = SharedData::GetWindow().GetSize();
@@ -187,8 +195,19 @@ namespace uvy {
 		ImGui::Text("Star Position: %d, %d", selectedStar->GetSectorPosition().x, selectedStar->GetSectorPosition().y);
 		ImGui::Text("Star Size: %s", selectedStar->GetStarSizeString().c_str());
 		ImGui::Text("Star Color: %s", selectedStar->GetStarColorString().c_str());
-		if (ImGui::Button("Close"))
+		ImGui::Text("Is Modified: %s", selectedStar->GetIsModified() ? "true" : "false");
+		if (ImGui::Button("Change Star Color to Pink")) { //testing
+			if (!selectedStar->GetIsModified()) {
+				auto star = uni.AddStarToModify(selectedStar).lock();
+				star->GetStarShape().setFillColor(sf::Color(255, 0, 255));
+				uni.SetSelectedModifiedStar(star);
+				uni.SetSelectedStar(std::weak_ptr<StarSystem>()); //Unselecting the procedually generated star
+			}
+		}
+		if (ImGui::Button("Close")) {
 			uni.SetSelectedStar(std::weak_ptr<StarSystem>());
+			uni.SetSelectedModifiedStar(std::weak_ptr<StarSystem>());
+		}
 		ImGui::End();
 	}
 

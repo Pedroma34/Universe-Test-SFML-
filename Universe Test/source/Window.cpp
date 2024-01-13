@@ -39,10 +39,14 @@ namespace uvy {
 				Universe& uni = SharedData::GetUniverse();
 				std::shared_ptr<StarSystem> starUnderMouse = uni.GetStarUnderMouse();
 				if (starUnderMouse != nullptr) {
-					if(starUnderMouse->GetIsModified())
+					if (starUnderMouse->GetIsModified()) {
 						uni.SetSelectedModifiedStar(starUnderMouse); //Set pointer to point to the star system that has been modified
-					else
+						uni.SetSelectedStar(std::weak_ptr<StarSystem>()); //Set pointer to point to the star system that has been modified)
+					}
+					else {
 						uni.SetSelectedStar(starUnderMouse); //Creates a pointer to the procedually generated star system that has been selected
+						uni.SetSelectedModifiedStar(std::weak_ptr<StarSystem>()); //Set pointer to point to the star system that has been modified)
+					}
 				}
 			}
 

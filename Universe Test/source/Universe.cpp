@@ -108,7 +108,7 @@ std::shared_ptr<uvy::StarSystem> uvy::Universe::GetStarUnderMouse() {
 }
 
 std::weak_ptr<class uvy::StarSystem> uvy::Universe::GetSelectedModifiedStar() {
-	return m_starSelected;
+	return m_starSelectedModified;
 }
 
 std::shared_ptr<class uvy::StarSystem> uvy::Universe::GetSelectedStar() {
