@@ -55,6 +55,11 @@ namespace uvy {
 		ImGui::SFML::Update(m_window, sf::seconds(1.0f / 60.0f));
 	}
 
+	void Window::Destroy() {
+		m_isOpen = false;
+		m_window.close();
+	}
+
 	void Window::Clear() {
 		m_window.clear();
 	}

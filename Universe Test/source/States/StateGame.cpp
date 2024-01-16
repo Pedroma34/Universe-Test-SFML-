@@ -159,6 +159,8 @@ namespace uvy {
 		ImGui::Text("Mouse Wheel: Zoom in/out");
 		ImGui::Text("F1: Toggle debug");
 		ImGui::Text("F11: Toggle fullscreen");
+		if (ImGui::Button("Close"))
+			SharedData::GetWindow().Destroy();
 		ImGui::End();
 
 

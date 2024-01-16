@@ -19,6 +19,13 @@ namespace uvy {
 
 
 
+		///////////////////////////
+	    ///	Closes window as well as applicaton
+		///////////////////////////
+		void Destroy();
+
+
+
 		void Clear();
 
 
